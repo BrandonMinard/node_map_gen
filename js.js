@@ -35,8 +35,10 @@
 //Generate nodes.
 //imagine a circle around each node, this will just be where the node letter is
 //Each node is a point though.
-//Imagine a larger circle around the node. This is the movements the node can take each frame.
-
+//imagine a tiny circle around the node. This is the movement circle we'll use each frame.
+//God this is dumb to do bottom up.
+//So we need the rise/run, which we then get the angle from,
+//then use the unit circle to figure out where on the movement circle we move to.
 
 
 const htmlCanvas = document.getElementById('drawField'),
@@ -52,17 +54,48 @@ const height = window.innerHeight - 100
 const radius = 50
 let nodeA = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
 let nodeB = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
-console.log(findDistance(nodeA, nodeB))
+console.log(nodeA, nodeB)
+// console.log(findAngleBetweenNodes(nodeA, nodeB))
+// console.log(findPointFromAngle(findAngleBetweenNodes(nodeA, nodeB), radius))
 // console.log(nodeB)
+context.beginPath();
+context.moveTo(nodeA[0], nodeA[1]);
+context.lineTo(nodeB[0], nodeB[1]);
+context.closePath();
+context.stroke();
 
-
-setInterval(myMethod, 500);
+// setInterval(myMethod, 500);
 context.fillStyle = "white"
-function myMethod() {
-    drawCircle(context, nodeA[0], nodeA[1], radius)
-    drawCircle(context, nodeB[0], nodeB[1], radius)
+// function myMethod() {
+drawCircle(context, nodeA[0], nodeA[1], radius)
+drawCircle(context, nodeB[0], nodeB[1], radius)
+let thing = findPointFromAngle(findAngleBetweenNodes(nodeA, nodeB), radius)
+context.fillStyle = "blue"
+if (nodeA[0] > nodeB[0]) {
+    drawCircle(context, nodeA[0] - thing[0], nodeA[1] - thing[1], 10)
+} else {
+    drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
 }
+thing = findPointFromAngle(findAngleBetweenNodes(nodeB, nodeA), radius)
+if (nodeB[0] > nodeA[0]) {
+    drawCircle(context, nodeB[0] - thing[0], nodeB[1] - thing[1], 10)
+} else {
+    drawCircle(context, nodeB[0] + thing[0], nodeB[1] + thing[1], 10)
+}
+
+
+// context.fillStyle = "blue"
+// drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
+// }
 // context.fillStyle = "white"
+
+context.fillStyle = 'black'
+context.font = '48px serif'
+context.textAlign = 'center';
+context.textBaseline = "middle";
+drawLetter(context, nodeA[0], nodeA[1], "A")
+drawLetter(context, nodeB[0], nodeB[1], "B")
+
 
 
 //ONLY CALL AFTER FILLSTYLE IS SET
@@ -82,8 +115,20 @@ function generateNum(limit) {
     return (Math.floor(Math.random() * limit))
 }
 
-function findAngleFromRoR(rise, run) {
+//I have no idea if this works.
+function findAngleBetweenNodes(points1, points2) {
+    let run = points1[0] - points2[0]
+    let rise = points1[1] - points2[1]
+    console.log(rise)
+    console.log(run)
+    console.log(rise / run)
+    // let run = points1[0] > points2[0] ? points1[0] - points2[0] : points2[0] - points1[0]
+    // let rise = points1[1] > points2[1] ? points1[1] - points2[1] : points2[1] - points1[1]
+    return Math.atan(rise / run)
+}
 
+function findPointFromAngle(angle, r) {
+    return [Math.cos(angle) * r, Math.sin(angle) * r]
 }
 
 //points 1 and 2 are arrays of 2 elements.

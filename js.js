@@ -51,52 +51,108 @@ const height = window.innerHeight - 100
 //     context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
 //     draw(context, document.getElementById("firstNum").value, document.getElementById("secondNum").value)
 // }
+//radius probably needs to be more contextual
 const radius = 50
-let nodeA = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
-let nodeB = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
-console.log(nodeA, nodeB)
+nodeList = ["a", "b", "c", "d"]
+nodes = {
+    "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
+}
+connections = [["a", "b"], ["b", "c"], ["c", "d"], ["b", "d"]]
+renderNodesAndConnections(context, nodes, connections)
+// let nodeA = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
+// let nodeB = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius];
+// console.log(nodeA, nodeB)
 // console.log(findAngleBetweenNodes(nodeA, nodeB))
 // console.log(findPointFromAngle(findAngleBetweenNodes(nodeA, nodeB), radius))
 // console.log(nodeB)
-context.beginPath();
-context.moveTo(nodeA[0], nodeA[1]);
-context.lineTo(nodeB[0], nodeB[1]);
-context.closePath();
-context.stroke();
 
-// setInterval(myMethod, 500);
-context.fillStyle = "white"
-// function myMethod() {
-drawCircle(context, nodeA[0], nodeA[1], radius)
-drawCircle(context, nodeB[0], nodeB[1], radius)
-let thing = findPointFromAngle(findAngleBetweenNodes(nodeA, nodeB), radius)
-context.fillStyle = "blue"
-if (nodeA[0] > nodeB[0]) {
-    drawCircle(context, nodeA[0] - thing[0], nodeA[1] - thing[1], 10)
-} else {
-    drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
-}
-thing = findPointFromAngle(findAngleBetweenNodes(nodeB, nodeA), radius)
-if (nodeB[0] > nodeA[0]) {
-    drawCircle(context, nodeB[0] - thing[0], nodeB[1] - thing[1], 10)
-} else {
-    drawCircle(context, nodeB[0] + thing[0], nodeB[1] + thing[1], 10)
-}
+// context.beginPath();
+// context.moveTo(nodeA[0], nodeA[1]);
+// context.lineTo(nodeB[0], nodeB[1]);
+// context.closePath();
+// context.stroke();
 
-
-// context.fillStyle = "blue"
-// drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
-// }
+// // setInterval(myMethod, 500);
 // context.fillStyle = "white"
+// // function myMethod() {
+// drawCircle(context, nodeA[0], nodeA[1], radius)
+// drawCircle(context, nodeB[0], nodeB[1], radius)
+// let thing = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), radius)
+// context.fillStyle = "blue"
+// if (nodeA[0] > nodeB[0]) {
+//     drawCircle(context, nodeA[0] - thing[0], nodeA[1] - thing[1], 10)
+//     context.fillStyle = "green"
+//     drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
+// } else {
+//     drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
+//     context.fillStyle = "green"
+//     drawCircle(context, nodeA[0] - thing[0], nodeA[1] - thing[1], 10)
+// }
+// context.fillStyle = "blue"
+// thing = findPointFromRadians(findRadiansBetweenNodes(nodeB, nodeA), radius)
+// if (nodeB[0] > nodeA[0]) {
+//     drawCircle(context, nodeB[0] - thing[0], nodeB[1] - thing[1], 10)
+//     context.fillStyle = "green"
+//     drawCircle(context, nodeB[0] + thing[0], nodeB[1] + thing[1], 10)
+// } else {
+//     drawCircle(context, nodeB[0] + thing[0], nodeB[1] + thing[1], 10)
+//     context.fillStyle = "green"
+//     drawCircle(context, nodeB[0] - thing[0], nodeB[1] - thing[1], 10)
+// }
 
-context.fillStyle = 'black'
-context.font = '48px serif'
-context.textAlign = 'center';
-context.textBaseline = "middle";
-drawLetter(context, nodeA[0], nodeA[1], "A")
-drawLetter(context, nodeB[0], nodeB[1], "B")
+
+// // context.fillStyle = "blue"
+// // drawCircle(context, nodeA[0] + thing[0], nodeA[1] + thing[1], 10)
+// // }
+// // context.fillStyle = "white"
+
+// context.fillStyle = 'black'
+// context.font = '48px serif'
+// context.textAlign = 'center';
+// context.textBaseline = "middle";
+// drawLetter(context, nodeA[0], nodeA[1], "A")
+// drawLetter(context, nodeB[0], nodeB[1], "B")
 
 
+
+function renderNodesAndConnections(context, nodes, connections) {
+    //render all the connections, must do this first.
+    context.fillStyle = "black"
+    context.font = '48px serif'
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
+    let radians;
+    connections.forEach(connection => {
+
+        context.beginPath();
+        //This looks bad, but it's fine, probably.
+        context.moveTo(nodes[connection[0]][0], nodes[connection[0]][1]);
+        context.lineTo(nodes[connection[1]][0], nodes[connection[1]][1]);
+        context.closePath();
+        context.stroke();
+    });
+    //then render all nodes and letters within
+    nodeList.forEach(nodeLetter => {
+        context.fillStyle = "white"
+        let node = nodes[nodeLetter]
+        drawCircle(context, node[0], node[1], radius)
+        //swapping fillstyle so often seems not great.
+        context.fillStyle = 'black'
+        drawLetter(context, node[0], node[1], nodeLetter)
+    });
+    //render the "motion vectors" (???)
+    //This is terrible, should figure them out then render them
+    //Now both steps are done at once.
+    connections.forEach(connection => {
+        radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[0]], nodes[connection[1]]), radius)
+        drawCircleOnNodeRadiansRadius(context, [nodes[connection[0]], nodes[connection[1]]], radians, 10)
+        radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[1]], nodes[connection[0]]), radius)
+        drawCircleOnNodeRadiansRadius(context, [nodes[connection[1]], nodes[connection[0]]], radians, 10)
+    });
+}
 
 //ONLY CALL AFTER FILLSTYLE IS SET
 function drawCircle(ctx, x, y, r) {
@@ -105,6 +161,20 @@ function drawCircle(ctx, x, y, r) {
     ctx.fill()
     ctx.stroke();
 }
+
+function drawCircleOnNodeRadiansRadius(context, nodes, radians, radius1) {
+    context.fillStyle = "blue"
+    if (nodes[0][0] > nodes[1][0]) {
+        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
+        context.fillStyle = "green"
+        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
+    } else {
+        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
+        context.fillStyle = "green"
+        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
+    }
+}
+
 
 //ONLY CALL WHEN FILLSTYLE, FONT, TEXTALIGN, AND TEXTBASELINE ARE SET
 function drawLetter(ctx, x, y, letter) {
@@ -115,19 +185,12 @@ function generateNum(limit) {
     return (Math.floor(Math.random() * limit))
 }
 
-//I have no idea if this works.
-function findAngleBetweenNodes(points1, points2) {
-    let run = points1[0] - points2[0]
-    let rise = points1[1] - points2[1]
-    console.log(rise)
-    console.log(run)
-    console.log(rise / run)
-    // let run = points1[0] > points2[0] ? points1[0] - points2[0] : points2[0] - points1[0]
-    // let rise = points1[1] > points2[1] ? points1[1] - points2[1] : points2[1] - points1[1]
-    return Math.atan(rise / run)
+//Works, neato.
+function findRadiansBetweenNodes(points1, points2) {
+    return Math.atan((points1[1] - points2[1]) / (points1[0] - points2[0]))
 }
 
-function findPointFromAngle(angle, r) {
+function findPointFromRadians(angle, r) {
     return [Math.cos(angle) * r, Math.sin(angle) * r]
 }
 

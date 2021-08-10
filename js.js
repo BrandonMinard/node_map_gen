@@ -150,34 +150,41 @@ function generateMotionVectors(nodes, connections) {
             radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), magnitude)
             radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
 
+            nodes[connection[0]] = [nodes[connection[0]][0] + radianPointA[0], nodes[connection[0]][1] + radianPointA[1]]
+
             needCorrectionB = nodeB[0] >= nodeA[0]
             radianPointB = findPointFromRadians(findRadiansBetweenNodes(nodeB, nodeA), magnitude)
             radianPointB = correctRadians(radianPointB, direction, needCorrectionB)
+            nodes[connection[1]] = [nodes[connection[1]][0] + radianPointB[0], nodes[connection[1]][1] + radianPointB[1]]
 
-            if (Object.keys(motionVectors).includes(connection[0])) {
-                motionVectors[connection[0]] = [motionVectors[connection[0]][0] + radianPointA[0], motionVectors[connection[0]][1] + radianPointA[1]]
-            } else {
-                motionVectors[connection[0]] = radianPointA
-            }
-            if (Object.keys(motionVectors).includes(connection[1])) {
-                motionVectors[connection[1]] = [motionVectors[connection[1]][0] + radianPointB[0], motionVectors[connection[1]][1] + radianPointB[1]]
-            } else {
-                motionVectors[connection[1]] = radianPointB
-            }
 
+
+            // if (Object.keys(motionVectors).includes(connection[0])) {
+            //     motionVectors[connection[0]] = [motionVectors[connection[0]][0] + radianPointA[0], motionVectors[connection[0]][1] + radianPointA[1]]
+            // } else {
+            //     motionVectors[connection[0]] = radianPointA
+            // }
+            // if (Object.keys(motionVectors).includes(connection[1])) {
+            //     motionVectors[connection[1]] = [motionVectors[connection[1]][0] + radianPointB[0], motionVectors[connection[1]][1] + radianPointB[1]]
+            // } else {
+            //     motionVectors[connection[1]] = radianPointB
+            // }
+
+        } else {
+            return false
         }
     });
     // console.log(motionVectors)
-    if (Object.keys(motionVectors).length > 0) {
-        Object.keys(motionVectors).forEach(element => {
-            nodes[element] = [nodes[element][0] + motionVectors[element][0], nodes[element][1] + motionVectors[element][1]]
-        });
-        return true
-    } else {
+    // if (Object.keys(motionVectors).length > 0) {
+    //     Object.keys(motionVectors).forEach(element => {
+    //         nodes[element] = [nodes[element][0] + motionVectors[element][0], nodes[element][1] + motionVectors[element][1]]
+    //     });
+    //     return true
+    // } else {
 
-        return false
-    }
-
+    //     return false
+    // }
+    return true
     //want to return updated nodes
     //So go through connections.
     //Find distance between em, then check whether we want to move them away from or toward each other.

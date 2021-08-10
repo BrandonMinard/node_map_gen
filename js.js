@@ -28,7 +28,7 @@ const height = window.innerHeight - 100
 //Maybe.
 
 //radius probably needs to be more contextual
-const radius = 50
+const radius = 40
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 const nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
@@ -72,7 +72,7 @@ function doTick(context, nodeList, nodes, connections) {
 //Should be called genAndApplyMotionVectors?
 function generateMotionVectors(nodes, connections) {
     const acceptableError = 40
-    const targetDistance = 300
+    const targetDistance = 350
     let motionVectors = {}
     let nodeA;
     let nodeB;
@@ -100,8 +100,10 @@ function generateMotionVectors(nodes, connections) {
             //so if distance > targetDistance + acceptableError, it needs to go towards
             //if it's < it needs to go away?
             if (direction) {
-                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 5
+                // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 5
+                magnitude = ((Math.floor(Math.sqrt(distance))) / 2)
             } else {
+                // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
                 magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
             }
             //Want to move them magnitude distance towards each other.

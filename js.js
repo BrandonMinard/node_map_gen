@@ -23,7 +23,7 @@ const width = window.innerWidth - 100
 htmlCanvas.height = window.innerHeight - 100;
 const height = window.innerHeight - 100
 
-
+const devMode = 0;
 //Do these need to be consts?
 //Maybe.
 
@@ -48,51 +48,54 @@ const connections = [["a", "b"], ["b", "c"], ["c", "d"],
 ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
 ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
 let didWiggle;
+let interval;
 //Have to render once first to get it started in an elegant way.
-renderNodesAndConnections(context, nodes, nodeList, connections)
-let interval = setInterval(doTick, 10, context, nodeList, nodes, connections);
-function doTick(context, nodeList, nodes, connections) {
-    //mess with nodes here
-    context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-    //nodes = 
-    didWiggle = generateMotionVectors(nodes, connections)
-    if (!didWiggle) {
-        stopInterval(interval)
-    }
-    // console.log(nodes)
-    // nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
+if (devMode == 0) {
     renderNodesAndConnections(context, nodes, nodeList, connections)
+    interval = setInterval(doTick, 16, context, nodeList, nodes, connections);
+    function doTick(context, nodeList, nodes, connections) {
+        //mess with nodes here
+        context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
+        //nodes = 
+        didWiggle = generateMotionVectors(nodes, connections)
+        if (!didWiggle) {
+            stopInterval(interval)
+        }
+        // console.log(nodes)
+        // nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
+        renderNodesAndConnections(context, nodes, nodeList, connections)
+    }
+} else {
+    // find how bad stable v unstable is.
+    let stable = 0;
+    for (let index = 0; index < 1000; index++) {
+        nodes = {
+            "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+        }
+        for (let index = 0; index < 500; index++) {
+            didWiggle = generateMotionVectors(nodes, connections)
+            if (!didWiggle) {
+                stable += 1
+                console.log("stable")
+                break
+            }
+
+        }
+
+
+    }
+    console.log(stable)
 }
-
-// find how bad stable v unstable is.
-// let stable = 0;
-// for (let index = 0; index < 1000; index++) {
-//     nodes = {
-//         "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//         "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-//     }
-//     for (let index = 0; index < 200; index++) {
-//         didWiggle = generateMotionVectors(nodes, connections)
-//         if (!didWiggle) {
-//             stable += 1
-//             // console.log("stable")
-//             break
-//         }
-
-//     }
-
-
-// }
-// console.log(stable)
 //This is a vector, right?
 //It has direction and magnitude.
 //So if something has multiple vectors, I think I can just add them together, right?
@@ -118,13 +121,14 @@ function generateMotionVectors(nodes, connections) {
     let direction;
     let needCorrectionA;
     let needCorrectionB;
+    let didWiggle = false;
     connections.forEach(connection => {
         //unneeded but nice for readability
         nodeA = nodes[connection[0]]
         nodeB = nodes[connection[1]]
         distance = findDistance(nodeA, nodeB);
         if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
-
+            didWiggle = true
             // } else {
             //we bad
             //Just do whatever, I'm only using log because I know about it lol
@@ -146,10 +150,10 @@ function generateMotionVectors(nodes, connections) {
             //nodeA moves by radianPointA.
             //I am so bad at naming things.
 
+            //Cool that's better, now need to do circle overlaps and fix those.
             needCorrectionA = nodeA[0] >= nodeB[0]
             radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), magnitude)
             radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
-
             nodes[connection[0]] = [nodes[connection[0]][0] + radianPointA[0], nodes[connection[0]][1] + radianPointA[1]]
 
             needCorrectionB = nodeB[0] >= nodeA[0]
@@ -170,8 +174,6 @@ function generateMotionVectors(nodes, connections) {
             //     motionVectors[connection[1]] = radianPointB
             // }
 
-        } else {
-            return false
         }
     });
     // console.log(motionVectors)
@@ -184,7 +186,7 @@ function generateMotionVectors(nodes, connections) {
 
     //     return false
     // }
-    return true
+    return didWiggle
     //want to return updated nodes
     //So go through connections.
     //Find distance between em, then check whether we want to move them away from or toward each other.
@@ -201,7 +203,7 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
 
     //render all the connections, must do this first.
     context.fillStyle = "black"
-    context.font = '48px serif'
+    context.font = '40px serif'
     context.textAlign = 'center';
     context.textBaseline = "middle";
     let radians;

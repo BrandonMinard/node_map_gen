@@ -30,7 +30,7 @@ const height = window.innerHeight - 100
 //radius probably needs to be more contextual
 const radius = 40
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
-const nodes = {
+let nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
@@ -47,19 +47,52 @@ const connections = [["a", "b"], ["b", "c"], ["c", "d"],
 ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
 ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
 ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
+let didWiggle;
 //Have to render once first to get it started in an elegant way.
 renderNodesAndConnections(context, nodes, nodeList, connections)
 let interval = setInterval(doTick, 10, context, nodeList, nodes, connections);
 function doTick(context, nodeList, nodes, connections) {
     //mess with nodes here
     context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-    nodes = generateMotionVectors(nodes, connections)
+    //nodes = 
+    didWiggle = generateMotionVectors(nodes, connections)
+    if (!didWiggle) {
+        stopInterval(interval)
+    }
     // console.log(nodes)
     // nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
     renderNodesAndConnections(context, nodes, nodeList, connections)
-
 }
 
+// find how bad stable v unstable is.
+// let stable = 0;
+// for (let index = 0; index < 1000; index++) {
+//     nodes = {
+//         "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//         "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+//     }
+//     for (let index = 0; index < 200; index++) {
+//         didWiggle = generateMotionVectors(nodes, connections)
+//         if (!didWiggle) {
+//             stable += 1
+//             // console.log("stable")
+//             break
+//         }
+
+//     }
+
+
+// }
+// console.log(stable)
 //This is a vector, right?
 //It has direction and magnitude.
 //So if something has multiple vectors, I think I can just add them together, right?
@@ -70,9 +103,11 @@ function doTick(context, nodeList, nodes, connections) {
 //I hope that works.
 //Should they be applied to both at like half magnitude?
 //Should be called genAndApplyMotionVectors?
+//Tried to be fancy, but these should be applied one at a time, not consolidated and applied all at once.
+//Makes the wiggles worse, I think?
 function generateMotionVectors(nodes, connections) {
-    const acceptableError = 40
-    const targetDistance = 350
+    const acceptableError = 50
+    const targetDistance = 300
     let motionVectors = {}
     let nodeA;
     let nodeB;
@@ -96,15 +131,15 @@ function generateMotionVectors(nodes, connections) {
             //Let's only move whole integers for sake of bugfixing.
             //true means towards, false means away.
             direction = distance > targetDistance + acceptableError
-            //wait
-            //so if distance > targetDistance + acceptableError, it needs to go towards
-            //if it's < it needs to go away?
+
+            //So when it comes towards a node, we want it to be precise.
+            //When it goes away, we want it to be wiggly to induce more change, so that eventually we may find a stable configuration.
             if (direction) {
                 // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 5
                 magnitude = ((Math.floor(Math.sqrt(distance))) / 2)
             } else {
                 // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
-                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
+                magnitude = ((Math.floor(Math.sqrt(distance))) / 2)
             }
             //Want to move them magnitude distance towards each other.
             //So "blue radians" at "magnitude radius"
@@ -132,15 +167,17 @@ function generateMotionVectors(nodes, connections) {
 
         }
     });
-    console.log(motionVectors)
+    // console.log(motionVectors)
     if (Object.keys(motionVectors).length > 0) {
         Object.keys(motionVectors).forEach(element => {
             nodes[element] = [nodes[element][0] + motionVectors[element][0], nodes[element][1] + motionVectors[element][1]]
         });
+        return true
     } else {
-        stopInterval(interval)
+
+        return false
     }
-    return nodes;
+
     //want to return updated nodes
     //So go through connections.
     //Find distance between em, then check whether we want to move them away from or toward each other.

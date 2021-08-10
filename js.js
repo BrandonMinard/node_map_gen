@@ -14,44 +14,131 @@
 //So we need the rise/run, which we then get the angle from,
 //then use the unit circle to figure out where on the movement circle we move to.
 
-
+//These few lines of code are totally not from stackoverflow.
+//totally.
 const htmlCanvas = document.getElementById('drawField'),
     context = htmlCanvas.getContext('2d');
 htmlCanvas.width = window.innerWidth - 100;
 const width = window.innerWidth - 100
 htmlCanvas.height = window.innerHeight - 100;
 const height = window.innerHeight - 100
-// function thing() {
-//     context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-//     draw(context, document.getElementById("firstNum").value, document.getElementById("secondNum").value)
-// }
-//radius probably needs to be more contextual
+
 
 //Do these need to be consts?
 //Maybe.
+
+//radius probably needs to be more contextual
 const radius = 50
-const nodeList = ["a", "b", "c", "d"]
+const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 const nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
+    "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+    "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
 }
-const connections = [["a", "b"], ["b", "c"], ["c", "d"], ["b", "d"], ["a", "d"]]
-// renderNodesAndConnections(context, nodes, connections)   
-// renderNodesAndConnections(context, nodes, nodeList, connections)
-context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-// console.log(connections)
-let interval = setInterval(doTick, 16, context, nodeList, nodes, connections);
+const connections = [["a", "b"], ["b", "c"], ["c", "d"],
+["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
+["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
+["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
+//Have to render once first to get it started in an elegant way.
+renderNodesAndConnections(context, nodes, nodeList, connections)
+let interval = setInterval(doTick, 10, context, nodeList, nodes, connections);
 function doTick(context, nodeList, nodes, connections) {
     //mess with nodes here
     context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-    nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
+    nodes = generateMotionVectors(nodes, connections)
+    // console.log(nodes)
+    // nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
     renderNodesAndConnections(context, nodes, nodeList, connections)
 
 }
 
+//This is a vector, right?
+//It has direction and magnitude.
+//So if something has multiple vectors, I think I can just add them together, right?
+//Vectors will then be applied to nodes at the end.
+//Vector should be x change + y change.
+//Don't I just need x change and y change.
+//That implicitly has the radians.
+//I hope that works.
+//Should they be applied to both at like half magnitude?
+//Should be called genAndApplyMotionVectors?
 function generateMotionVectors(nodes, connections) {
+    const acceptableError = 40
+    const targetDistance = 300
+    let motionVectors = {}
+    let nodeA;
+    let nodeB;
+    let distance;
+    let magnitude;
+    let radianPointA;
+    let radianPointB;
+    let direction;
+    let needCorrectionA;
+    let needCorrectionB;
+    connections.forEach(connection => {
+        //unneeded but nice for readability
+        nodeA = nodes[connection[0]]
+        nodeB = nodes[connection[1]]
+        distance = findDistance(nodeA, nodeB);
+        if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
+
+            // } else {
+            //we bad
+            //Just do whatever, I'm only using log because I know about it lol
+            //Let's only move whole integers for sake of bugfixing.
+            //true means towards, false means away.
+            direction = distance > targetDistance + acceptableError
+            //wait
+            //so if distance > targetDistance + acceptableError, it needs to go towards
+            //if it's < it needs to go away?
+            if (direction) {
+                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 5
+            } else {
+                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
+            }
+            //Want to move them magnitude distance towards each other.
+            //So "blue radians" at "magnitude radius"
+            //nodeA moves by radianPointA.
+            //I am so bad at naming things.
+
+            needCorrectionA = nodeA[0] >= nodeB[0]
+            radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), magnitude)
+            radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
+
+            needCorrectionB = nodeB[0] >= nodeA[0]
+            radianPointB = findPointFromRadians(findRadiansBetweenNodes(nodeB, nodeA), magnitude)
+            radianPointB = correctRadians(radianPointB, direction, needCorrectionB)
+
+            if (Object.keys(motionVectors).includes(connection[0])) {
+                motionVectors[connection[0]] = [motionVectors[connection[0]][0] + radianPointA[0], motionVectors[connection[0]][1] + radianPointA[1]]
+            } else {
+                motionVectors[connection[0]] = radianPointA
+            }
+            if (Object.keys(motionVectors).includes(connection[1])) {
+                motionVectors[connection[1]] = [motionVectors[connection[1]][0] + radianPointB[0], motionVectors[connection[1]][1] + radianPointB[1]]
+            } else {
+                motionVectors[connection[1]] = radianPointB
+            }
+
+        }
+    });
+    console.log(motionVectors)
+    if (Object.keys(motionVectors).length > 0) {
+        Object.keys(motionVectors).forEach(element => {
+            nodes[element] = [nodes[element][0] + motionVectors[element][0], nodes[element][1] + motionVectors[element][1]]
+        });
+    } else {
+        stopInterval(interval)
+    }
+    return nodes;
     //want to return updated nodes
     //So go through connections.
     //Find distance between em, then check whether we want to move them away from or toward each other.
@@ -72,6 +159,7 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     context.textAlign = 'center';
     context.textBaseline = "middle";
     let radians;
+    let node;
     connections.forEach(connection => {
 
         context.beginPath();
@@ -82,9 +170,10 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
         context.stroke();
     });
     //then render all nodes and letters within
+
     nodeList.forEach(nodeLetter => {
         context.fillStyle = "white"
-        let node = nodes[nodeLetter]
+        node = nodes[nodeLetter]
         drawCircle(context, node[0], node[1], radius)
         //swapping fillstyle so often seems not great.
         context.fillStyle = 'black'
@@ -109,11 +198,24 @@ function drawCircle(ctx, x, y, r) {
     ctx.stroke();
 }
 
+//This should be better, but I don't care.
+function correctRadians(pointA, direction, needsCorrection) {
+    if (needsCorrection && direction) {
+        pointA = [-pointA[0], -pointA[1]]
+    } else if (!needsCorrection && !direction) {
+        pointA = [-pointA[0], -pointA[1]]
+    }
+    return pointA
+}
+
 function drawCircleOnNodeRadiansRadius(context, nodes, radians, radius1) {
     context.fillStyle = "blue"
+    //This logic should be somewhere else, why is it here...
     if (nodes[0][0] >= nodes[1][0]) {
+        //towards
         drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
         context.fillStyle = "green"
+        //away
         drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
     } else {
         drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
@@ -136,12 +238,13 @@ function generateNum(limit) {
 function findRadiansBetweenNodes(points1, points2) {
     return Math.atan((points1[1] - points2[1]) / (points1[0] - points2[0]))
 }
-
+//Finds a point on a unit circle of radius r, with angle.
+//I don't know.
 function findPointFromRadians(angle, r) {
     return [Math.cos(angle) * r, Math.sin(angle) * r]
 }
 
 //points 1 and 2 are arrays of 2 elements.
 function findDistance(points1, points2) {
-    return Math.sqrt(Math.pow(points2[0] - points1[0]) + Math.pow(points2[1] - points1[1]))
+    return Math.sqrt(Math.pow(points2[0] - points1[0], 2) + Math.pow(points2[1] - points1[1], 2))
 }

@@ -27,17 +27,19 @@ const height = window.innerHeight - 100
 // }
 //radius probably needs to be more contextual
 
+//Do these need to be consts?
+//Maybe.
 const radius = 50
-let nodeList = ["a", "b", "c", "d"]
-let nodes = {
+const nodeList = ["a", "b", "c", "d"]
+const nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
 }
-let connections = [["a", "b"], ["b", "c"], ["c", "d"], ["b", "d"], ["a", "d"]]
+const connections = [["a", "b"], ["b", "c"], ["c", "d"], ["b", "d"], ["a", "d"]]
 // renderNodesAndConnections(context, nodes, connections)   
-renderNodesAndConnections(context, nodes, nodeList, connections)
+// renderNodesAndConnections(context, nodes, nodeList, connections)
 context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
 // console.log(connections)
 let interval = setInterval(doTick, 16, context, nodeList, nodes, connections);
@@ -51,6 +53,10 @@ function doTick(context, nodeList, nodes, connections) {
 
 function generateMotionVectors(nodes, connections) {
     //want to return updated nodes
+    //So go through connections.
+    //Find distance between em, then check whether we want to move them away from or toward each other.
+    //Move them based on like log(distance) + 1 lol I don't know.
+    //have a "generous" sweet spot, like 50 +- 5
 }
 
 

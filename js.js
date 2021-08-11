@@ -1,4 +1,4 @@
-const devMode = 0;
+const devMode = 1;
 
 //create canvas to a reasonable size based on window
 //also sets good constants
@@ -110,71 +110,46 @@ function moveNodes(nodes, connections) {
     let needCorrectionA;
     let needCorrectionB;
     let didWiggle = false;
+    let a;
+    let b;
+    let c;
+    let nextX;
+    let nextY;
     connections.forEach(connection => {
+        // console.log(connection)
         //unneeded but nice for readability
-        nodeA = nodes[connection[0]]
-        nodeB = nodes[connection[1]]
-        //The 2 loop should be around here.
-        //This needs to be rethought-out.
-        //Should be a loop that happens twice. 
-        //Distance is computed twice, since NodeA moves before NodeB
-        distance = findDistance(nodeA, nodeB);
-        if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
-            //This should stay
-            //It simply means that at least one node moved.
-            //Just to ensure we do not encounted brownian motion and infinite wiggliness.
-            didWiggle = true
+        a = connection[0]
+        b = connection[1]
 
-            //direction is towards or awawy from either NodeA to nodeB, or NodeB to NodeA
-            //This needs to be changed.
-            direction = distance > targetDistance + acceptableError
+        for (let index = 0; index < 2; index++) {
+            distance = findDistance(nodes[a], nodes[b]);
+            if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
+                didWiggle = true;
+                direction = distance > targetDistance + acceptableError;
+                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 2;
+                needCorrectionA = nodes[a][0] >= nodes[b][0]
+                radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[a], nodes[b]), magnitude)
+                radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
+                nextX = nodes[a][0] + radianPointA[0]
+                nextY = nodes[a][1] + radianPointA[1]
+                if (nextX > (width - (2 * radius)) + width) {
+                    nextX = (width - (2 * radius)) + width
+                }
+                if (nextY > (height - (2 * radius)) + radius) {
+                    nextY = (height - (2 * radius)) + radius
+                }
+                nodes[a] = [nextX, nextY]
+            }
 
-
-            //Should turn that ending 2 into a const that can be modified.
-            //2 seems to significantly quicken the wiggling
-            //magnitude was only halved because I wanted Nodes to either directly come together-
-            //Or directly go away.
-            //That design decision hads been modified.
-            //Pray I do not modify it further.
-            magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 2
-
-
-            //So instead of this we are going to just do, NodeA and NodeB
-            //Run it twice
-            //And at the top of the loop, just swap them.
-            //That makes a too much sense not to do.
-
-            //We could also run nodeA, and it's first conncetion.
-            //And all the nodes it will intersect.
-            //We can do both.
-            needCorrectionA = nodeA[0] >= nodeB[0]
-            radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), magnitude)
-            radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
-            nodes[connection[0]] = [nodes[connection[0]][0] + radianPointA[0], nodes[connection[0]][1] + radianPointA[1]]
-            //Check intersections here.
-            //Swap after here.
-
-
-
-            needCorrectionB = nodeB[0] >= nodeA[0]
-            radianPointB = findPointFromRadians(findRadiansBetweenNodes(nodeB, nodeA), magnitude)
-            radianPointB = correctRadians(radianPointB, direction, needCorrectionB)
-            nodes[connection[1]] = [nodes[connection[1]][0] + radianPointB[0], nodes[connection[1]][1] + radianPointB[1]]
+            c = a;
+            a = b;
+            b = c;
 
         }
     });
-    //this is unneeded
-    // Object.keys(nodes).forEach(node => {
-    //if node intersects with any other node, move it.
-    //uh, will it update? Hopefully.
-    // });
-    //So here should check if any nodes overlap any others.
-    //So, "node exclusion zone" should be 4 times the radius, right?
-    //Sure, why not.
-    //Should it just be brute force and follow the same rules?
-    //Or try to add some random stuff and put it somewhere where things don't overlap.
-    //What if everywhere overlaps?
-    //Sorta relying on floats to be imprecise so that we get eventual convergence on stability.
+
+    //do circle comparisons now
+
 
     //Don't need to return nodes because it's pass by reference.
     //This is sloppy but nice.

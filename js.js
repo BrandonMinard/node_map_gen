@@ -1,34 +1,20 @@
-//So first things first, figure out where all circles are.
-//They must be at least x+y units away, where x is the radius, and y is the length of the line.
-//I don't know how to optimize this, so why not just try this shit sorta randomly?
-//Just want to render a randomly generated graph.
-//Okay it's worse though, because it may have complicated relationships...
-//Uhhhh...
-// Hm.
-
-//Generate nodes.
-//imagine a circle around each node, this will just be where the node letter is
-//Each node is a point though.
-//imagine a tiny circle around the node. This is the movement circle we'll use each frame.
-//God this is dumb to do bottom up.
-//So we need the rise/run, which we then get the angle from,
-//then use the unit circle to figure out where on the movement circle we move to.
-
-//These few lines of code are totally not from stackoverflow.
-//totally.
-const htmlCanvas = document.getElementById('drawField'),
-    context = htmlCanvas.getContext('2d');
-htmlCanvas.width = window.innerWidth - 100;
-const width = window.innerWidth - 100
-htmlCanvas.height = window.innerHeight - 100;
-const height = window.innerHeight - 100
-
 const devMode = 0;
-//Do these need to be consts?
-//Maybe.
+
+//create canvas to a reasonable size based on window
+//also sets good constants
+const htmlCanvas = document.getElementById('drawField')
+const context = htmlCanvas.getContext('2d');
+const width = window.innerWidth - 100
+htmlCanvas.width = width;
+const height = window.innerHeight - 100
+htmlCanvas.height = height;
 
 //radius probably needs to be more contextual
+//radius determines the circles drawn, and the exclusion circles around them.
+//The exclusion circle is 4*radius
+//Because it's node to node, and I want 2*radius between each circle.
 const radius = 40
+
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 let nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
@@ -47,27 +33,27 @@ const connections = [["a", "b"], ["b", "c"], ["c", "d"],
 ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
 ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
 ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
+
+const reducer = (accumulator, currentValue) => accumulator + currentValue;
+
 let didWiggle;
 let interval;
-//Have to render once first to get it started in an elegant way.
 if (devMode == 0) {
+    //Have to render once first to get it started elegantly.
     renderNodesAndConnections(context, nodes, nodeList, connections)
     interval = setInterval(doTick, 16, context, nodeList, nodes, connections);
     function doTick(context, nodeList, nodes, connections) {
-        //mess with nodes here
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
-        //nodes = 
-        didWiggle = generateMotionVectors(nodes, connections)
+        didWiggle = moveNodes(nodes, connections)
         if (!didWiggle) {
             stopInterval(interval)
         }
-        // console.log(nodes)
-        // nodes["a"] = [nodes["a"][0] + 1, nodes["a"][1]]
         renderNodesAndConnections(context, nodes, nodeList, connections)
     }
 } else {
     // find how bad stable v unstable is.
     let stable = 0;
+    let itersNeeded = []
     for (let index = 0; index < 1000; index++) {
         nodes = {
             "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
@@ -83,35 +69,37 @@ if (devMode == 0) {
             "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
         }
         for (let index = 0; index < 500; index++) {
-            didWiggle = generateMotionVectors(nodes, connections)
+            didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
                 stable += 1
-                console.log("stable")
+                itersNeeded.push(index)
                 break
             }
-
         }
-
-
     }
-    console.log(stable)
+    //statistical stuff
+    //only runs once, so let is fine here.
+    let max = Math.max(...itersNeeded);
+    let min = Math.min(...itersNeeded);
+    let median = itersNeeded.sort((a, b) => a - b)[Math.floor(stable / 2)]
+    let avgIters = itersNeeded.reduce(reducer) / stable
+    console.log("min: ", min)
+    console.log("median: ", median)
+    console.log("max: ", max)
+    console.log("avg: ", avgIters)
+    console.log("stable: ", stable)
 }
-//This is a vector, right?
-//It has direction and magnitude.
-//So if something has multiple vectors, I think I can just add them together, right?
-//Vectors will then be applied to nodes at the end.
-//Vector should be x change + y change.
-//Don't I just need x change and y change.
-//That implicitly has the radians.
-//I hope that works.
-//Should they be applied to both at like half magnitude?
-//Should be called genAndApplyMotionVectors?
-//Tried to be fancy, but these should be applied one at a time, not consolidated and applied all at once.
-//Makes the wiggles worse, I think?
-function generateMotionVectors(nodes, connections) {
+
+//Function figures out the next position of each node in the graph.
+//Nodes that are not within acceptable distances of their connections-
+//either go towards or away from their partner depending on distance.
+//All nodes stay 4*radius away from each other.
+//All nodes stay within the bounds of the canvas at all times.
+function moveNodes(nodes, connections) {
     const acceptableError = 50
     const targetDistance = 300
-    let motionVectors = {}
+    const exclusion = radius * 4;
+    // let motionVectors = {}
     let nodeA;
     let nodeB;
     let distance;
@@ -126,72 +114,71 @@ function generateMotionVectors(nodes, connections) {
         //unneeded but nice for readability
         nodeA = nodes[connection[0]]
         nodeB = nodes[connection[1]]
+        //The 2 loop should be around here.
+        //This needs to be rethought-out.
+        //Should be a loop that happens twice. 
+        //Distance is computed twice, since NodeA moves before NodeB
         distance = findDistance(nodeA, nodeB);
         if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
+            //This should stay
+            //It simply means that at least one node moved.
+            //Just to ensure we do not encounted brownian motion and infinite wiggliness.
             didWiggle = true
-            // } else {
-            //we bad
-            //Just do whatever, I'm only using log because I know about it lol
-            //Let's only move whole integers for sake of bugfixing.
-            //true means towards, false means away.
+
+            //direction is towards or awawy from either NodeA to nodeB, or NodeB to NodeA
+            //This needs to be changed.
             direction = distance > targetDistance + acceptableError
 
-            //So when it comes towards a node, we want it to be precise.
-            //When it goes away, we want it to be wiggly to induce more change, so that eventually we may find a stable configuration.
-            if (direction) {
-                // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 5
-                magnitude = ((Math.floor(Math.sqrt(distance))) / 2)
-            } else {
-                // magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + generateNum(20)
-                magnitude = ((Math.floor(Math.sqrt(distance))) / 2)
-            }
-            //Want to move them magnitude distance towards each other.
-            //So "blue radians" at "magnitude radius"
-            //nodeA moves by radianPointA.
-            //I am so bad at naming things.
 
-            //Cool that's better, now need to do circle overlaps and fix those.
+            //Should turn that ending 2 into a const that can be modified.
+            //2 seems to significantly quicken the wiggling
+            //magnitude was only halved because I wanted Nodes to either directly come together-
+            //Or directly go away.
+            //That design decision hads been modified.
+            //Pray I do not modify it further.
+            magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 2
+
+
+            //So instead of this we are going to just do, NodeA and NodeB
+            //Run it twice
+            //And at the top of the loop, just swap them.
+            //That makes a too much sense not to do.
+
+            //We could also run nodeA, and it's first conncetion.
+            //And all the nodes it will intersect.
+            //We can do both.
             needCorrectionA = nodeA[0] >= nodeB[0]
             radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodeA, nodeB), magnitude)
             radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
             nodes[connection[0]] = [nodes[connection[0]][0] + radianPointA[0], nodes[connection[0]][1] + radianPointA[1]]
+            //Check intersections here.
+            //Swap after here.
+
+
 
             needCorrectionB = nodeB[0] >= nodeA[0]
             radianPointB = findPointFromRadians(findRadiansBetweenNodes(nodeB, nodeA), magnitude)
             radianPointB = correctRadians(radianPointB, direction, needCorrectionB)
             nodes[connection[1]] = [nodes[connection[1]][0] + radianPointB[0], nodes[connection[1]][1] + radianPointB[1]]
 
-
-
-            // if (Object.keys(motionVectors).includes(connection[0])) {
-            //     motionVectors[connection[0]] = [motionVectors[connection[0]][0] + radianPointA[0], motionVectors[connection[0]][1] + radianPointA[1]]
-            // } else {
-            //     motionVectors[connection[0]] = radianPointA
-            // }
-            // if (Object.keys(motionVectors).includes(connection[1])) {
-            //     motionVectors[connection[1]] = [motionVectors[connection[1]][0] + radianPointB[0], motionVectors[connection[1]][1] + radianPointB[1]]
-            // } else {
-            //     motionVectors[connection[1]] = radianPointB
-            // }
-
         }
     });
-    // console.log(motionVectors)
-    // if (Object.keys(motionVectors).length > 0) {
-    //     Object.keys(motionVectors).forEach(element => {
-    //         nodes[element] = [nodes[element][0] + motionVectors[element][0], nodes[element][1] + motionVectors[element][1]]
-    //     });
-    //     return true
-    // } else {
+    //this is unneeded
+    // Object.keys(nodes).forEach(node => {
+    //if node intersects with any other node, move it.
+    //uh, will it update? Hopefully.
+    // });
+    //So here should check if any nodes overlap any others.
+    //So, "node exclusion zone" should be 4 times the radius, right?
+    //Sure, why not.
+    //Should it just be brute force and follow the same rules?
+    //Or try to add some random stuff and put it somewhere where things don't overlap.
+    //What if everywhere overlaps?
+    //Sorta relying on floats to be imprecise so that we get eventual convergence on stability.
 
-    //     return false
-    // }
+    //Don't need to return nodes because it's pass by reference.
+    //This is sloppy but nice.
     return didWiggle
-    //want to return updated nodes
-    //So go through connections.
-    //Find distance between em, then check whether we want to move them away from or toward each other.
-    //Move them based on like log(distance) + 1 lol I don't know.
-    //have a "generous" sweet spot, like 50 +- 5
 }
 
 

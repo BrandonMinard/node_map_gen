@@ -1,4 +1,4 @@
-const devMode = 1;
+const devMode = 0;
 
 //create canvas to a reasonable size based on window
 //also sets good constants
@@ -13,7 +13,7 @@ htmlCanvas.height = height;
 //radius determines the circles drawn, and the exclusion circles around them.
 //The exclusion circle is 4*radius
 //Because it's node to node, and I want 2*radius between each circle.
-const radius = 40
+const radius = 35
 
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 let nodes = {
@@ -41,7 +41,7 @@ let interval;
 if (devMode == 0) {
     //Have to render once first to get it started elegantly.
     renderNodesAndConnections(context, nodes, nodeList, connections)
-    interval = setInterval(doTick, 16, context, nodeList, nodes, connections);
+    interval = setInterval(doTick, 10, context, nodeList, nodes, connections);
     function doTick(context, nodeList, nodes, connections) {
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
         didWiggle = moveNodes(nodes, connections)
@@ -68,9 +68,10 @@ if (devMode == 0) {
             "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
             "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
         }
-        for (let index = 0; index < 500; index++) {
+        for (let index = 0; index < 200; index++) {
             didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
+
                 stable += 1
                 itersNeeded.push(index)
                 break
@@ -96,82 +97,110 @@ if (devMode == 0) {
 //All nodes stay 4*radius away from each other.
 //All nodes stay within the bounds of the canvas at all times.
 function moveNodes(nodes, connections) {
+    //Acceptable error should grow over time so that we always get something eventually.
     const acceptableError = 50
     const targetDistance = 300
     const exclusion = radius * 4;
-    // let motionVectors = {}
-    let nodeA;
-    let nodeB;
     let distance;
     let magnitude;
     let radianPointA;
-    let radianPointB;
     let direction;
     let needCorrectionA;
-    let needCorrectionB;
     let didWiggle = false;
-    let a;
-    let b;
-    let c;
+    let a, b, c;
     let nextX;
     let nextY;
     connections.forEach(connection => {
-        // console.log(connection)
-        //unneeded but nice for readability
+
+        //iterate through connections forward and backwards in less code.
         a = connection[0]
         b = connection[1]
-
         for (let index = 0; index < 2; index++) {
+            //this should be turned into a function.
+            //Takes in two nodes, and an acceptable distance between them.
             distance = findDistance(nodes[a], nodes[b]);
             if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
                 didWiggle = true;
                 direction = distance > targetDistance + acceptableError;
-                magnitude = ((Math.floor(Math.sqrt(distance))) / 2) + 2;
+                //moves it by the sqrt of the distance + rand num between -50 and 50.
+                //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
+                //Some randomness is also very nice.
+                magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
                 needCorrectionA = nodes[a][0] >= nodes[b][0]
                 radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[a], nodes[b]), magnitude)
                 radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
                 nextX = nodes[a][0] + radianPointA[0]
                 nextY = nodes[a][1] + radianPointA[1]
-                if (nextX > (width - (2 * radius)) + width) {
-                    nextX = (width - (2 * radius)) + width
+                if (nextX > (width - (2 * radius)) + radius) {
+                    nextX = (width - (2 * radius)) + radius
+                } else if (nextX < 0) {
+                    nextX = (2 * radius)
+                    // + width
                 }
                 if (nextY > (height - (2 * radius)) + radius) {
                     nextY = (height - (2 * radius)) + radius
+                } else if (nextY < 0) {
+                    nextY = (2 * radius)
+                    // + height
                 }
                 nodes[a] = [nextX, nextY]
             }
 
+            //swap a and b using a third value, c.
             c = a;
             a = b;
             b = c;
-
         }
     });
 
-    //do circle comparisons now
+    //do circle comparisons here
+    // nodes.forEach(node => {
+    //     nodes.forEach(compNode => {
 
+    //     });
+    // });
 
-    //Don't need to return nodes because it's pass by reference.
-    //This is sloppy but nice.
     return didWiggle
+}
+
+//Moves nodes directly towards or away from each other.
+//If they're beyond the distance and acceptable error, they get moved closer.
+//Else they get moved further apart.
+function moveNodeBasedOnDistance(nodeA, nodeB, distance, acceptableError) {
+
 }
 
 
 function stopInterval() {
     clearInterval(interval)
+    //check boundaries at the end.
+    let good = true
+    nodeList.forEach(node => {
+        if (nodes[node][0] > (width - (2 * radius)) + radius) {
+            good = false
+        } else if (nodes[node][0] < 0) {
+            good = false
+        }
+        if (nodes[node][1] > (height - (2 * radius)) + radius) {
+            good = false
+        } else if (nodes[node][1] < 0) {
+            good = false
+        }
+
+    });
+    console.log(good)
 }
 
 function renderNodesAndConnections(context, nodes, nodeList, connections) {
-
-    //render all the connections, must do this first.
+    //set up text render
     context.fillStyle = "black"
-    context.font = '40px serif'
+    context.font = '30px serif'
     context.textAlign = 'center';
     context.textBaseline = "middle";
     let radians;
     let node;
+    //render all the connections, must do this first.
     connections.forEach(connection => {
-
         context.beginPath();
         //This looks bad, but it's fine, probably.
         context.moveTo(nodes[connection[0]][0], nodes[connection[0]][1]);
@@ -189,14 +218,13 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
         context.fillStyle = 'black'
         drawLetter(context, node[0], node[1], nodeLetter)
     });
-    //render the "motion vectors" (???)
-    //This is terrible, should figure them out then render them
-    //Now both steps are done at once.
+
+    //this isn't useful anymore.
     connections.forEach(connection => {
         radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[0]], nodes[connection[1]]), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodes[connection[0]], nodes[connection[1]]], radians, 10)
+        drawCircleOnNodeRadiansRadius(context, [nodes[connection[0]], nodes[connection[1]]], radians, 3.5)
         radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[1]], nodes[connection[0]]), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodes[connection[1]], nodes[connection[0]]], radians, 10)
+        drawCircleOnNodeRadiansRadius(context, [nodes[connection[1]], nodes[connection[0]]], radians, 3.5)
     });
 }
 
@@ -218,6 +246,7 @@ function correctRadians(pointA, direction, needsCorrection) {
     return pointA
 }
 
+//This isn't useful anymore, I know the idea behind it works now.
 function drawCircleOnNodeRadiansRadius(context, nodes, radians, radius1) {
     context.fillStyle = "blue"
     //This logic should be somewhere else, why is it here...

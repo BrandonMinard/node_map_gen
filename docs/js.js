@@ -1,3 +1,60 @@
+//OPTIMIZED METHODS FOR V8
+
+//ONLY CALL AFTER FILLSTYLE IS SET
+const drawCircle = (ctx, x, y, r) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fill()
+    ctx.stroke();
+}
+
+//This should be better, but I don't care.
+const correctRadians = (pointA, direction, needsCorrection) => {
+    if (needsCorrection && direction) {
+        pointA = [-pointA[0], -pointA[1]]
+    } else if (!needsCorrection && !direction) {
+        pointA = [-pointA[0], -pointA[1]]
+    }
+    return pointA
+}
+
+//This isn't useful anymore, I know the idea behind it works now.
+const drawCircleOnNodeRadiansRadius = (context, nodes, radians, radius1) => {
+    context.fillStyle = "blue"
+    //This logic should be somewhere else, why is it here...
+    if (nodes[0][0] >= nodes[1][0]) {
+        //towards
+        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
+        context.fillStyle = "green"
+        //away
+        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
+    } else {
+        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
+        context.fillStyle = "green"
+        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
+    }
+}
+
+//ONLY CALL WHEN FILLSTYLE, FONT, TEXTALIGN, AND TEXTBASELINE ARE SET
+const drawLetter = (ctx, x, y, letter) => {
+    ctx.fillText(letter, x, y)
+}
+
+const generateNum = (limit) => (Math.floor(Math.random() * limit))
+
+const findRadiansBetweenNodes = (points1, points2) => Math.atan((points1[1] - points2[1]) / (points1[0] - points2[0]))
+
+//Finds a point on a unit circle of radius r, with angle.
+//I don't know.
+const findPointFromRadians = (angle, r) => [Math.cos(angle) * r, Math.sin(angle) * r]
+
+
+//points 1 and 2 are arrays of 2 elements.
+const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - points1[0], 2) + Math.pow(points2[1] - points1[1], 2))
+
+//ACTUAL CODE START
+
+
 const devMode = 0;
 
 //create canvas to a reasonable size based on window
@@ -39,8 +96,10 @@ let interval;
 if (devMode == 0) {
     //Have to render once first to get it started elegantly.
     renderNodesAndConnections(context, nodes, nodeList, connections)
-    interval = setInterval(doTick, 10, context, nodeList, nodes, connections);
+    //skip every 10 render steps.
+    interval = setInterval(doTick, 1, context, nodeList, nodes, connections);
     function doTick(context, nodeList, nodes, connections) {
+
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
         didWiggle = moveNodes(nodes, connections)
         if (!didWiggle) {
@@ -140,6 +199,7 @@ function moveNodes(nodes, connections) {
 //this handles moving nodes always away from each other
 //Always to close from each other
 //Or within an acceptable bound between those.
+//This function needs to be significantly optimized.
 function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError, comparison) {
     let nextX;
     let nextY;
@@ -248,7 +308,6 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
         context.stroke();
     });
     //then render all nodes and letters within
-
     nodeList.forEach(nodeLetter => {
         context.fillStyle = "white"
         node = nodes[nodeLetter]
@@ -267,62 +326,4 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     });
 }
 
-//ONLY CALL AFTER FILLSTYLE IS SET
-function drawCircle(ctx, x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fill()
-    ctx.stroke();
-}
 
-//This should be better, but I don't care.
-function correctRadians(pointA, direction, needsCorrection) {
-    if (needsCorrection && direction) {
-        pointA = [-pointA[0], -pointA[1]]
-    } else if (!needsCorrection && !direction) {
-        pointA = [-pointA[0], -pointA[1]]
-    }
-    return pointA
-}
-
-//This isn't useful anymore, I know the idea behind it works now.
-function drawCircleOnNodeRadiansRadius(context, nodes, radians, radius1) {
-    context.fillStyle = "blue"
-    //This logic should be somewhere else, why is it here...
-    if (nodes[0][0] >= nodes[1][0]) {
-        //towards
-        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
-        context.fillStyle = "green"
-        //away
-        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
-    } else {
-        drawCircle(context, nodes[0][0] + radians[0], nodes[0][1] + radians[1], radius1)
-        context.fillStyle = "green"
-        drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
-    }
-}
-
-
-//ONLY CALL WHEN FILLSTYLE, FONT, TEXTALIGN, AND TEXTBASELINE ARE SET
-function drawLetter(ctx, x, y, letter) {
-    ctx.fillText(letter, x, y)
-}
-
-function generateNum(limit) {
-    return (Math.floor(Math.random() * limit))
-}
-
-//Works, neato.
-function findRadiansBetweenNodes(points1, points2) {
-    return Math.atan((points1[1] - points2[1]) / (points1[0] - points2[0]))
-}
-//Finds a point on a unit circle of radius r, with angle.
-//I don't know.
-function findPointFromRadians(angle, r) {
-    return [Math.cos(angle) * r, Math.sin(angle) * r]
-}
-
-//points 1 and 2 are arrays of 2 elements.
-function findDistance(points1, points2) {
-    return Math.sqrt(Math.pow(points2[0] - points1[0], 2) + Math.pow(points2[1] - points1[1], 2))
-}

@@ -108,7 +108,9 @@ function moveNodes(nodes, connections) {
     //Acceptable error should grow over time so that we always get something eventually.
     const acceptableError = 50
     const targetDistance = 300
+    //3 because reasons.
     const exclusion = radius * 4;
+    const exclusionError = 60;
     let didWiggle = false;
     let a, b, c;
     let changeArr;
@@ -117,7 +119,7 @@ function moveNodes(nodes, connections) {
         a = connection[0]
         b = connection[1]
         for (let index = 0; index < 2; index++) {
-            changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError)
+            changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
             //The fix, which should've been obvious.
             if (!didWiggle) {
                 didWiggle = changeArr[2]
@@ -126,18 +128,50 @@ function moveNodes(nodes, connections) {
             if (changeArr[2]) {
                 nodes[a] = [changeArr[0], changeArr[1]]
             }
+            nodeList.forEach(nodeB => {
+                if (nodeB != a) {
+                    changeArr = moveNodeBasedOnDistanceToAnother(a, nodeB, exclusion, exclusionError, 1)
+                    //The fix, which should've been obvious.
+                    if (!didWiggle) {
+                        didWiggle = changeArr[2]
+                    }
+                    //these are for different purposes.
+                    if (changeArr[2]) {
+                        nodes[a] = [changeArr[0], changeArr[1]]
+                    }
+                }
+            });
             //swap a and b using a third value, c.
             c = a;
             a = b;
             b = c;
         }
     });
-
     //do circle comparisons here
     //so compare all circles to all other circles.
     //If the distance is within unacceptable bounds, move them away from each other.
     //Else do nothing.
 
+    //This is n^n rather than n!, which is signifcantly more computation.
+    //However the additional randomness and movement introduced should hopefully help it find stability sooner.
+    //This is a potential point of optimization
+    //Could just find the all mathematical combinations of 2 elements within nodeList.
+    //But that is only one way, not both ways.
+    //I am not nearly as math inclined as I need to be elegant, so both ways will work out better.
+    // nodeList.forEach(nodeA => {
+    //     // console.log(nodes[nodeA])
+    //     nodeList.forEach(nodeB => {
+    //         changeArr = moveNodeBasedOnDistanceToAnother(nodeA, nodeB, exclusion, exclusionError, 0)
+    //         //The fix, which should've been obvious.
+    //         if (!didWiggle) {
+    //             didWiggle = changeArr[2]
+    //         }
+    //         //these are for different purposes.
+    //         if (changeArr[2]) {
+    //             nodes[nodeA] = [changeArr[0], changeArr[1]]
+    //         }
+    //     });
+    // });
 
     return didWiggle
 }
@@ -149,7 +183,11 @@ function moveNodes(nodes, connections) {
 //There needs to be another value that changes the radians something moves by, for more randomness.
 //This won't support circle exclusion.
 //It does towards and away only, never one or the other.
-function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError) {
+//So this function needs to take in towards/away, or one or the other.
+//So, I guess, 0 1 or 2?
+//It will run a LOT, so I think integers would be prudent.
+//The integer determines the main if comparison on whether things should change or not.
+function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError, comparison) {
     let nextX;
     let nextY;
     let magnitude;
@@ -158,10 +196,29 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     let needCorrectionA;
     let didWiggle = false
     let distance = findDistance(nodes[nodeA], nodes[nodeB]);
-    if (distance < (targetDistance - acceptableError) || distance > (targetDistance + acceptableError)) {
+    //comp var is the result of whatever the comparison stuff below outputs.
+    let compVar;
+    //This if should become a variable that's used depending on a comparison variable.
+    //Either towards, away, or both.
+    //Represented by 0, 1, and 2?
+    //That makes sense to me.
+    if (comparison == 0) {
+        //should move towards
+        compVar = distance > targetDistance + acceptableError
+    } else if (comparison == 1) {
+        //should move away
+        compVar = distance < targetDistance - acceptableError
+    } else if (comparison == 2) {
+        //should move towards or away.
+        compVar = distance < (targetDistance - acceptableError) || distance > (targetDistance + acceptableError)
+
+    }
+    if (compVar) {
         didWiggle = true;
+        //This may need to be changed?
+        //I think direction works for all cases.
         direction = distance > (targetDistance + acceptableError);
-        //moves it by the sqrt of the distance + rand num between -50 and 50.
+        //moves it by the sqrt of the distance + rand num between -25 and 25 for the sake of randomness.
         //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
         magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50) - 25;
         needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];

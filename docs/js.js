@@ -134,11 +134,10 @@ function moveNodes(nodes, connections) {
     });
 
     //do circle comparisons here
-    // nodes.forEach(node => {
-    //     nodes.forEach(compNode => {
+    //so compare all circles to all other circles.
+    //If the distance is within unacceptable bounds, move them away from each other.
+    //Else do nothing.
 
-    //     });
-    // });
 
     return didWiggle
 }
@@ -148,6 +147,8 @@ function moveNodes(nodes, connections) {
 //Else they get moved further apart.
 //Magnitude needs to become a global constant so that tuning is easier.
 //There needs to be another value that changes the radians something moves by, for more randomness.
+//This won't support circle exclusion.
+//It does towards and away only, never one or the other.
 function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError) {
     let nextX;
     let nextY;
@@ -162,7 +163,7 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         direction = distance > (targetDistance + acceptableError);
         //moves it by the sqrt of the distance + rand num between -50 and 50.
         //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
+        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50) - 25;
         needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
         radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
         radianPointA = correctRadians(radianPointA, direction, needCorrectionA);

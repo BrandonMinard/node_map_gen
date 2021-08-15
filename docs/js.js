@@ -1,6 +1,46 @@
-//OPTIMIZED METHODS FOR V8
 
-//ONLY CALL AFTER FILLSTYLE IS SET
+//Constants.
+//runs it 1000 times, for 200 steps.
+//Tells you various metrics about how long it took to become stable.
+const devMode = 0;
+
+const fullAlpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+
+//create canvas to a reasonable size based on window
+//also sets good constants
+const htmlCanvas = document.getElementById('drawField')
+const context = htmlCanvas.getContext('2d');
+const width = window.innerWidth - 100
+htmlCanvas.width = width;
+const height = window.innerHeight - 100
+htmlCanvas.height = height;
+
+//radius determines the circles drawn, and the ndoe exclusion around them.
+//The exclusion circle is 3*radius
+const radius = 35
+
+//acceptable distance between connections
+const targetDistance = 300
+//and the acceptable error
+const acceptableError = 50
+
+//acceptable distance between nodes.
+const exclusion = radius * 4;
+//and the acceptable error
+const exclusionError = 40;
+
+//OPTIMIZED METHODS FOR V8
+const genNode = (handle, radius) => sdgoinmsg
+
+//call after fillstyle is set
+const genNodePositionsWithNumOfNodes = (alphabet, numOfNodes) => {
+    //temporary.
+    if (numOfNodes > alphabet.length) {
+        alert("Don't generate more nodes than there are letters of the alphabet")
+    }
+
+}
+
 const drawCircle = (ctx, x, y, r) => {
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
@@ -8,7 +48,7 @@ const drawCircle = (ctx, x, y, r) => {
     ctx.stroke();
 }
 
-//This should be better, but I don't care.
+//This works, unsure the math reasons why, but it does.
 const correctRadians = (pointA, direction, needsCorrection) => {
     if (needsCorrection && direction) {
         pointA = [-pointA[0], -pointA[1]]
@@ -19,9 +59,10 @@ const correctRadians = (pointA, direction, needsCorrection) => {
 }
 
 //This isn't useful anymore, I know the idea behind it works now.
+//Blue circles means the angle towards another connected node.
+//Green circles means the angle away from another connected node.
 const drawCircleOnNodeRadiansRadius = (context, nodes, radians, radius1) => {
     context.fillStyle = "blue"
-    //This logic should be somewhere else, why is it here...
     if (nodes[0][0] >= nodes[1][0]) {
         //towards
         drawCircle(context, nodes[0][0] - radians[0], nodes[0][1] - radians[1], radius1)
@@ -52,25 +93,15 @@ const findPointFromRadians = (angle, r) => [Math.cos(angle) * r, Math.sin(angle)
 //points 1 and 2 are arrays of 2 elements.
 const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - points1[0], 2) + Math.pow(points2[1] - points1[1], 2))
 
+//---------------------
 //ACTUAL CODE START
 
 
-const devMode = 0;
-
-//create canvas to a reasonable size based on window
-//also sets good constants
-const htmlCanvas = document.getElementById('drawField')
-const context = htmlCanvas.getContext('2d');
-const width = window.innerWidth - 100
-htmlCanvas.width = width;
-const height = window.innerHeight - 100
-htmlCanvas.height = height;
-
-//radius determines the circles drawn, and the ndoe exclusion around them.
-//The exclusion circle is 3*radius
-const radius = 35
 
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+//set this to a function that takes an input.
+//Should also generate a nodelist
+//Can also use Object.keys(object) for that
 let nodes = {
     "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
@@ -84,10 +115,10 @@ let nodes = {
     "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
     "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
 }
-const connections = [["a", "b"], ["b", "c"], ["c", "d"],
-["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
-["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
-["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
+const connections = [
+    ["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
+    ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
+    ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
 
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
@@ -125,7 +156,7 @@ if (devMode == 0) {
             "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
             "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
         }
-        for (let index = 0; index < 200; index++) {
+        for (let index = 0; index < 500; index++) {
             didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
 
@@ -153,10 +184,6 @@ if (devMode == 0) {
 //Move nodes away from each other if they're too close together.
 function moveNodes(nodes, connections) {
     //Acceptable error should grow over time so that we always get something eventually.
-    const acceptableError = 50
-    const targetDistance = 300
-    const exclusion = radius * 4;
-    const exclusionError = 60;
     let didWiggle = false;
     let a, b, c;
     let changeArr;
@@ -237,15 +264,19 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         radianPointA = correctRadians(radianPointA, direction, needCorrectionA);
         nextX = nodes[nodeA][0] + radianPointA[0]
         nextY = nodes[nodeA][1] + radianPointA[1]
-        if (nextX > (width - (2 * radius)) + radius) {
-            nextX = (width - (2 * radius)) + radius;
+        //There was a bug here, and it seemed to help?
+        //And x or y that went beyond their bounds went to 0 instead.
+        //I changed it so that went to 0 if they're below 0 and went to max if they're above max.
+        //This is interesting behavior though.
+        if (nextX > (width - (4 * radius))) {
+            nextX = width - (4 * radius);
         } else if (nextX < 0) {
-            nextX = (2 * radius);
+            nextX = (4 * radius);
         }
-        if (nextY > (height - (2 * radius)) + radius) {
-            nextY = (height - (2 * radius)) + radius;
+        if (nextY > (height - (4 * radius))) {
+            nextY = height - (4 * radius);
         } else if (nextY < 0) {
-            nextY = (2 * radius);
+            nextY = (4 * radius);
         }
     }
     if (didWiggle == false) {

@@ -9,10 +9,8 @@ htmlCanvas.width = width;
 const height = window.innerHeight - 100
 htmlCanvas.height = height;
 
-//radius probably needs to be more contextual
-//radius determines the circles drawn, and the exclusion circles around them.
-//The exclusion circle is 4*radius
-//Because it's node to node, and I want 2*radius between each circle.
+//radius determines the circles drawn, and the ndoe exclusion around them.
+//The exclusion circle is 3*radius
 const radius = 35
 
 const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
@@ -91,24 +89,13 @@ if (devMode == 0) {
     console.log("stable: ", stable)
 }
 
-//Function figures out the next position of each node in the graph.
-//Nodes that are not within acceptable distances of their connections-
-//either go towards or away from their partner depending on distance.
-//All nodes stay 4*radius away from each other.
-//All nodes stay within the bounds of the canvas at all times.
-
-
-//So the logic here was flawed.
-//Set a flag, then set it within a 2 loop.
-//So it could be true, false
-//or false, true.
-//And the result would be true or false, when it should be true.
-//Oh I fixed it.
+//The main functions that moves nodes around
+//Move connected nodes if they're too far away or too close together.
+//Move nodes away from each other if they're too close together.
 function moveNodes(nodes, connections) {
     //Acceptable error should grow over time so that we always get something eventually.
     const acceptableError = 50
     const targetDistance = 300
-    //3 because reasons.
     const exclusion = radius * 4;
     const exclusionError = 60;
     let didWiggle = false;
@@ -128,14 +115,13 @@ function moveNodes(nodes, connections) {
             if (changeArr[2]) {
                 nodes[a] = [changeArr[0], changeArr[1]]
             }
+            //Check that nodes[a] is not too close to any other node that is not itself.
             nodeList.forEach(nodeB => {
                 if (nodeB != a) {
                     changeArr = moveNodeBasedOnDistanceToAnother(a, nodeB, exclusion, exclusionError, 1)
-                    //The fix, which should've been obvious.
                     if (!didWiggle) {
                         didWiggle = changeArr[2]
                     }
-                    //these are for different purposes.
                     if (changeArr[2]) {
                         nodes[a] = [changeArr[0], changeArr[1]]
                     }
@@ -147,46 +133,13 @@ function moveNodes(nodes, connections) {
             b = c;
         }
     });
-    //do circle comparisons here
-    //so compare all circles to all other circles.
-    //If the distance is within unacceptable bounds, move them away from each other.
-    //Else do nothing.
-
-    //This is n^n rather than n!, which is signifcantly more computation.
-    //However the additional randomness and movement introduced should hopefully help it find stability sooner.
-    //This is a potential point of optimization
-    //Could just find the all mathematical combinations of 2 elements within nodeList.
-    //But that is only one way, not both ways.
-    //I am not nearly as math inclined as I need to be elegant, so both ways will work out better.
-    // nodeList.forEach(nodeA => {
-    //     // console.log(nodes[nodeA])
-    //     nodeList.forEach(nodeB => {
-    //         changeArr = moveNodeBasedOnDistanceToAnother(nodeA, nodeB, exclusion, exclusionError, 0)
-    //         //The fix, which should've been obvious.
-    //         if (!didWiggle) {
-    //             didWiggle = changeArr[2]
-    //         }
-    //         //these are for different purposes.
-    //         if (changeArr[2]) {
-    //             nodes[nodeA] = [changeArr[0], changeArr[1]]
-    //         }
-    //     });
-    // });
-
     return didWiggle
 }
 
-//Moves nodes directly towards or away from each other.
-//If they're beyond the distance and acceptable error, they get moved closer.
-//Else they get moved further apart.
-//Magnitude needs to become a global constant so that tuning is easier.
-//There needs to be another value that changes the radians something moves by, for more randomness.
-//This won't support circle exclusion.
-//It does towards and away only, never one or the other.
-//So this function needs to take in towards/away, or one or the other.
-//So, I guess, 0 1 or 2?
-//It will run a LOT, so I think integers would be prudent.
-//The integer determines the main if comparison on whether things should change or not.
+//Move nodes based on the comparison argument.
+//this handles moving nodes always away from each other
+//Always to close from each other
+//Or within an acceptable bound between those.
 function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError, comparison) {
     let nextX;
     let nextY;
@@ -200,8 +153,7 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     let compVar;
     //This if should become a variable that's used depending on a comparison variable.
     //Either towards, away, or both.
-    //Represented by 0, 1, and 2?
-    //That makes sense to me.
+    //Represented by 0, 1, and 2.
     if (comparison == 0) {
         //should move towards
         compVar = distance > targetDistance + acceptableError
@@ -211,7 +163,6 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     } else if (comparison == 2) {
         //should move towards or away.
         compVar = distance < (targetDistance - acceptableError) || distance > (targetDistance + acceptableError)
-
     }
     if (compVar) {
         didWiggle = true;

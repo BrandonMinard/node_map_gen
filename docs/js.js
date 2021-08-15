@@ -109,65 +109,23 @@ function moveNodes(nodes, connections) {
     const acceptableError = 50
     const targetDistance = 300
     const exclusion = radius * 4;
-    // let distance;
-    // let magnitude;
-    // let radianPointA;
-    // let direction;
-    // let needCorrectionA;
     let didWiggle = false;
     let a, b, c;
-    // let nextX;
-    // let nextY;
     let changeArr;
     connections.forEach(connection => {
-
         //iterate through connections forward and backwards in less code.
         a = connection[0]
         b = connection[1]
         for (let index = 0; index < 2; index++) {
-            //this should be turned into a function.
-            //Takes in two nodes, and an acceptable distance between them.
-            // distance = findDistance(nodes[a], nodes[b]);
-
-            // nodes[a] = moveNodeBasedOnDistanceToAnother(a, b, distance, targetDistance, acceptableError)
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError)
             //The fix, which should've been obvious.
             if (!didWiggle) {
                 didWiggle = changeArr[2]
             }
-
+            //these are for different purposes.
             if (changeArr[2]) {
                 nodes[a] = [changeArr[0], changeArr[1]]
             }
-
-
-            // if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
-            //     didWiggle = true;
-            //     direction = distance > targetDistance + acceptableError;
-            //     //moves it by the sqrt of the distance + rand num between -50 and 50.
-            //     //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-            //     //Some randomness is also very nice.
-            //     magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
-            //     needCorrectionA = nodes[a][0] >= nodes[b][0]
-            //     radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[a], nodes[b]), magnitude)
-            //     radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
-            //     nextX = nodes[a][0] + radianPointA[0]
-            //     nextY = nodes[a][1] + radianPointA[1]
-            //     if (nextX > (width - (2 * radius)) + radius) {
-            //         nextX = (width - (2 * radius)) + radius
-            //     } else if (nextX < 0) {
-            //         nextX = (2 * radius)
-            //         // + width
-            //     }
-            //     if (nextY > (height - (2 * radius)) + radius) {
-            //         nextY = (height - (2 * radius)) + radius
-            //     } else if (nextY < 0) {
-            //         nextY = (2 * radius)
-            //         // + height
-            //     }
-            //     nodes[a] = [nextX, nextY]
-            // }
-
             //swap a and b using a third value, c.
             c = a;
             a = b;
@@ -188,9 +146,9 @@ function moveNodes(nodes, connections) {
 //Moves nodes directly towards or away from each other.
 //If they're beyond the distance and acceptable error, they get moved closer.
 //Else they get moved further apart.
-//This could be significantly better.
+//Magnitude needs to become a global constant so that tuning is easier.
+//There needs to be another value that changes the radians something moves by, for more randomness.
 function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError) {
-
     let nextX;
     let nextY;
     let magnitude;
@@ -204,7 +162,6 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         direction = distance > (targetDistance + acceptableError);
         //moves it by the sqrt of the distance + rand num between -50 and 50.
         //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-        //Some randomness is also very nice.
         magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
         needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
         radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
@@ -215,13 +172,11 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
             nextX = (width - (2 * radius)) + radius;
         } else if (nextX < 0) {
             nextX = (2 * radius);
-            // + width
         }
         if (nextY > (height - (2 * radius)) + radius) {
             nextY = (height - (2 * radius)) + radius;
         } else if (nextY < 0) {
             nextY = (2 * radius);
-            // + height
         }
     }
     if (didWiggle == false) {

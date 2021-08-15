@@ -96,20 +96,29 @@ if (devMode == 0) {
 //either go towards or away from their partner depending on distance.
 //All nodes stay 4*radius away from each other.
 //All nodes stay within the bounds of the canvas at all times.
+
+
+//So the logic here was flawed.
+//Set a flag, then set it within a 2 loop.
+//So it could be true, false
+//or false, true.
+//And the result would be true or false, when it should be true.
+//Oh I fixed it.
 function moveNodes(nodes, connections) {
     //Acceptable error should grow over time so that we always get something eventually.
     const acceptableError = 50
     const targetDistance = 300
     const exclusion = radius * 4;
-    let distance;
-    let magnitude;
-    let radianPointA;
-    let direction;
-    let needCorrectionA;
+    // let distance;
+    // let magnitude;
+    // let radianPointA;
+    // let direction;
+    // let needCorrectionA;
     let didWiggle = false;
     let a, b, c;
-    let nextX;
-    let nextY;
+    // let nextX;
+    // let nextY;
+    let changeArr;
     connections.forEach(connection => {
 
         //iterate through connections forward and backwards in less code.
@@ -118,33 +127,46 @@ function moveNodes(nodes, connections) {
         for (let index = 0; index < 2; index++) {
             //this should be turned into a function.
             //Takes in two nodes, and an acceptable distance between them.
-            distance = findDistance(nodes[a], nodes[b]);
-            if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
-                didWiggle = true;
-                direction = distance > targetDistance + acceptableError;
-                //moves it by the sqrt of the distance + rand num between -50 and 50.
-                //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-                //Some randomness is also very nice.
-                magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
-                needCorrectionA = nodes[a][0] >= nodes[b][0]
-                radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[a], nodes[b]), magnitude)
-                radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
-                nextX = nodes[a][0] + radianPointA[0]
-                nextY = nodes[a][1] + radianPointA[1]
-                if (nextX > (width - (2 * radius)) + radius) {
-                    nextX = (width - (2 * radius)) + radius
-                } else if (nextX < 0) {
-                    nextX = (2 * radius)
-                    // + width
-                }
-                if (nextY > (height - (2 * radius)) + radius) {
-                    nextY = (height - (2 * radius)) + radius
-                } else if (nextY < 0) {
-                    nextY = (2 * radius)
-                    // + height
-                }
-                nodes[a] = [nextX, nextY]
+            // distance = findDistance(nodes[a], nodes[b]);
+
+            // nodes[a] = moveNodeBasedOnDistanceToAnother(a, b, distance, targetDistance, acceptableError)
+            changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError)
+            //The fix, which should've been obvious.
+            if (!didWiggle) {
+                didWiggle = changeArr[2]
             }
+
+            if (changeArr[2]) {
+                nodes[a] = [changeArr[0], changeArr[1]]
+            }
+
+
+            // if (distance < targetDistance - acceptableError || distance > targetDistance + acceptableError) {
+            //     didWiggle = true;
+            //     direction = distance > targetDistance + acceptableError;
+            //     //moves it by the sqrt of the distance + rand num between -50 and 50.
+            //     //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
+            //     //Some randomness is also very nice.
+            //     magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
+            //     needCorrectionA = nodes[a][0] >= nodes[b][0]
+            //     radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[a], nodes[b]), magnitude)
+            //     radianPointA = correctRadians(radianPointA, direction, needCorrectionA)
+            //     nextX = nodes[a][0] + radianPointA[0]
+            //     nextY = nodes[a][1] + radianPointA[1]
+            //     if (nextX > (width - (2 * radius)) + radius) {
+            //         nextX = (width - (2 * radius)) + radius
+            //     } else if (nextX < 0) {
+            //         nextX = (2 * radius)
+            //         // + width
+            //     }
+            //     if (nextY > (height - (2 * radius)) + radius) {
+            //         nextY = (height - (2 * radius)) + radius
+            //     } else if (nextY < 0) {
+            //         nextY = (2 * radius)
+            //         // + height
+            //     }
+            //     nodes[a] = [nextX, nextY]
+            // }
 
             //swap a and b using a third value, c.
             c = a;
@@ -166,12 +188,54 @@ function moveNodes(nodes, connections) {
 //Moves nodes directly towards or away from each other.
 //If they're beyond the distance and acceptable error, they get moved closer.
 //Else they get moved further apart.
-function moveNodeBasedOnDistance(nodeA, nodeB, distance, acceptableError) {
+//This could be significantly better.
+function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError) {
 
+    let nextX;
+    let nextY;
+    let magnitude;
+    let radianPointA;
+    let direction;
+    let needCorrectionA;
+    let didWiggle = false
+    let distance = findDistance(nodes[nodeA], nodes[nodeB]);
+    if (distance < (targetDistance - acceptableError) || distance > (targetDistance + acceptableError)) {
+        didWiggle = true;
+        direction = distance > (targetDistance + acceptableError);
+        //moves it by the sqrt of the distance + rand num between -50 and 50.
+        //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
+        //Some randomness is also very nice.
+        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50);
+        needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
+        radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
+        radianPointA = correctRadians(radianPointA, direction, needCorrectionA);
+        nextX = nodes[nodeA][0] + radianPointA[0]
+        nextY = nodes[nodeA][1] + radianPointA[1]
+        if (nextX > (width - (2 * radius)) + radius) {
+            nextX = (width - (2 * radius)) + radius;
+        } else if (nextX < 0) {
+            nextX = (2 * radius);
+            // + width
+        }
+        if (nextY > (height - (2 * radius)) + radius) {
+            nextY = (height - (2 * radius)) + radius;
+        } else if (nextY < 0) {
+            nextY = (2 * radius);
+            // + height
+        }
+    }
+    if (didWiggle == false) {
+        //Mostly for finding bugs, probably bad practice.
+        return [0, 0, didWiggle];
+    } else {
+        return [nextX, nextY, didWiggle];
+    }
 }
 
 
 function stopInterval() {
+    const acceptableError = 50
+    const targetDistance = 300
     clearInterval(interval)
     //check boundaries at the end.
     let good = true
@@ -188,6 +252,17 @@ function stopInterval() {
         }
 
     });
+    let distance;
+    let alsoGood = true;
+    //check that all connections are within acceptable bounds.
+    connections.forEach(connection => {
+        distance = findDistance(nodes[connection[0]], nodes[connection[1]])
+        if (!(distance >= targetDistance - acceptableError && distance <= targetDistance + acceptableError)) {
+            alsoGood = false
+        }
+    });
+
+    console.log(alsoGood)
     console.log(good)
 }
 

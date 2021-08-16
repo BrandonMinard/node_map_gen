@@ -248,15 +248,15 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         //And x or y that went beyond their bounds went to 0 instead.
         //I changed it so that went to 0 if they're below 0 and went to max if they're above max.
         //This is interesting behavior though.
-        if (nextX > (width - (2 * radius))) {
-            nextX = width - (2 * radius);
+        if (nextX > (width - radius)) {
+            nextX = width - radius;
         } else if (nextX < radius) {
-            nextX = (2 * radius);
+            nextX = radius;
         }
-        if (nextY > (height - (2 * radius))) {
-            nextY = height - (2 * radius);
+        if (nextY > (height - radius)) {
+            nextY = height - radius;
         } else if (nextY < radius) {
-            nextY = (2 * radius);
+            nextY = radius;
         }
     }
     if (didWiggle == false) {

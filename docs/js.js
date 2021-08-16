@@ -120,7 +120,6 @@ if (devMode == 0) {
         //can make it faster with this, really cuts down on jitteriness.
         // for (let index = 0; index < 5; index++) {
         //     
-
         // }
         didWiggle = moveNodes(nodes, connections)
         if (!didWiggle) {
@@ -182,8 +181,6 @@ function moveNodes(nodes, connections) {
                     }
                 }
             });
-
-
 
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
             //The fix, which should've been obvious.
@@ -292,14 +289,14 @@ function stopInterval() {
     //check boundaries at the end.
     let good = true
     nodeList.forEach(node => {
-        if (nodes[node][0] > (width - (2 * radius)) + radius) {
+        if (nodes[node][0] > (width - radius)) {
             good = false
-        } else if (nodes[node][0] < 0) {
+        } else if (nodes[node][0] < radius) {
             good = false
         }
-        if (nodes[node][1] > (height - (2 * radius)) + radius) {
+        if (nodes[node][1] > (height - radius)) {
             good = false
-        } else if (nodes[node][1] < 0) {
+        } else if (nodes[node][1] < radius) {
             good = false
         }
 

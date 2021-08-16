@@ -1,11 +1,11 @@
 
 //Constants.
-//runs it 1000 times, for 200 steps.
-//Tells you various metrics about how long it took to become stable.
-const devMode = 0;
-
 const fullAlpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
+const connections = [
+    ["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
+    ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
+    ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
 //create canvas to a reasonable size based on window
 //also sets good constants
 const htmlCanvas = document.getElementById('drawField')
@@ -37,6 +37,10 @@ const exclusion = radius * 4;
 //and the acceptable error
 const exclusionError = 40;
 
+//for dev
+const iterLimit = 500;
+const totalRuns = 1000;
+
 
 
 //OPTIMIZED METHODS FOR V8
@@ -67,7 +71,6 @@ const correctRadians = (pointA, direction, needsCorrection) => {
     return pointA
 }
 
-//This isn't useful anymore, I know the idea behind it works now.
 //Blue circles means the angle towards another connected node.
 //Green circles means the angle away from another connected node.
 const drawCircleOnNodeRadiansRadius = (context, nodes, radians, radius1) => {
@@ -95,7 +98,6 @@ const generateNum = (limit) => (Math.floor(Math.random() * limit))
 const findRadiansBetweenNodes = (points1, points2) => Math.atan((points1[1] - points2[1]) / (points1[0] - points2[0]))
 
 //Finds a point on a unit circle of radius r, with angle.
-//I don't know.
 const findPointFromRadians = (angle, r) => [Math.cos(angle) * r, Math.sin(angle) * r]
 
 
@@ -105,13 +107,6 @@ const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - point
 //---------------------
 //ACTUAL CODE START
 
-
-
-
-const connections = [
-    ["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
-    ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
-    ["b", "d"], ["d", "f"], ["f", "h"], ["h", "j"]]
 
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
@@ -151,6 +146,7 @@ function startRegularly() {
 }
 
 async function startInDev() {
+
     context.fillStyle = "black"
     context.textAlign = 'center';
     context.textBaseline = "middle";
@@ -158,13 +154,14 @@ async function startInDev() {
     context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
     context.font = '50px serif'
     drawLetter(context, 300, 300, "Please wait")
+    //just a sleep to make sure "please wait" renders.
     await new Promise(r => setTimeout(r, 100));
     // find how bad stable v unstable is.
     let stable = 0;
     let itersNeeded = []
-    for (let index = 0; index < 1000; index++) {
+    for (let index = 0; index < totalRuns; index++) {
         [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
-        for (let index = 0; index < 500; index++) {
+        for (let index = 0; index < iterLimit; index++) {
             didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
 
@@ -187,13 +184,13 @@ async function startInDev() {
     let medianString = "median: " + median
     let maxString = "max: " + max
     let avgString = "avgIters: " + Math.round(avgIters)
-    let stableString = "stable: " + stable + " / 1000"
+    let stableString = "stable: " + stable + " / " + totalRuns
     console.log("min: ", min)
     console.log("median: ", median)
     console.log("max: ", max)
     console.log("avg: ", avgIters)
     console.log("stable: ", stable)
-    drawLetter(context, 300, 300, "iterLimit: 500")
+    drawLetter(context, 300, 300, "iterLimit: " + iterLimit)
     drawLetter(context, 300, 340, minString)
     drawLetter(context, 300, 380, medianString)
     drawLetter(context, 300, 420, maxString)
@@ -326,8 +323,6 @@ function generateNodes(alphabet, numOfNodes) {
 }
 
 function stopInterval() {
-    const acceptableError = 50
-    const targetDistance = 300
     clearInterval(interval)
     //check boundaries at the end.
     let good = true
@@ -353,7 +348,6 @@ function stopInterval() {
             alsoGood = false
         }
     });
-
 
     console.log(good)
     console.log(alsoGood)

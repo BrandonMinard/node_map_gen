@@ -28,9 +28,9 @@ const acceptableError = 50
 const exclusion = radius * 4;
 //and the acceptable error
 const exclusionError = 40;
+const numToGen = 11
 
 //OPTIMIZED METHODS FOR V8
-const genNode = (handle, radius) => sdgoinmsg
 
 //call after fillstyle is set
 const genNodePositionsWithNumOfNodes = (alphabet, numOfNodes) => {
@@ -98,23 +98,8 @@ const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - point
 
 
 
-const nodeList = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
-//set this to a function that takes an input.
-//Should also generate a nodelist
-//Can also use Object.keys(object) for that
-let nodes = {
-    "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-    "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-}
+let [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
+
 const connections = [
     ["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
     ["a", "c"], ["c", "e"], ["e", "g"], ["g", "i"], ["i", "k"],
@@ -132,6 +117,11 @@ if (devMode == 0) {
     function doTick(context, nodeList, nodes, connections) {
 
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
+        //can make it faster with this, really cuts down on jitteriness.
+        // for (let index = 0; index < 5; index++) {
+        //     
+
+        // }
         didWiggle = moveNodes(nodes, connections)
         if (!didWiggle) {
             stopInterval(interval)
@@ -143,19 +133,7 @@ if (devMode == 0) {
     let stable = 0;
     let itersNeeded = []
     for (let index = 0; index < 1000; index++) {
-        nodes = {
-            "a": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "b": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "c": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "d": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "e": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "f": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "g": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "h": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "i": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "j": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-            "k": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
-        }
+        [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
         for (let index = 0; index < 500; index++) {
             didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
@@ -192,15 +170,6 @@ function moveNodes(nodes, connections) {
         a = connection[0]
         b = connection[1]
         for (let index = 0; index < 2; index++) {
-            changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
-            //The fix, which should've been obvious.
-            if (!didWiggle) {
-                didWiggle = changeArr[2]
-            }
-            //these are for different purposes.
-            if (changeArr[2]) {
-                nodes[a] = [changeArr[0], changeArr[1]]
-            }
             //Check that nodes[a] is not too close to any other node that is not itself.
             nodeList.forEach(nodeB => {
                 if (nodeB != a) {
@@ -213,6 +182,19 @@ function moveNodes(nodes, connections) {
                     }
                 }
             });
+
+
+
+            changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
+            //The fix, which should've been obvious.
+            if (!didWiggle) {
+                didWiggle = changeArr[2]
+            }
+            //these are for different purposes.
+            if (changeArr[2]) {
+                nodes[a] = [changeArr[0], changeArr[1]]
+            }
+
             //swap a and b using a third value, c.
             c = a;
             a = b;
@@ -258,7 +240,8 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         direction = distance > (targetDistance + acceptableError);
         //moves it by the sqrt of the distance + rand num between -25 and 25 for the sake of randomness.
         //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(50) - 25;
+        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(60) - 30
+        // generateNum(Math.floor(Math.sqrt(distance))) - Math.floor(Math.sqrt(distance)) / 2;
         needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
         radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
         radianPointA = correctRadians(radianPointA, direction, needCorrectionA);
@@ -268,15 +251,15 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         //And x or y that went beyond their bounds went to 0 instead.
         //I changed it so that went to 0 if they're below 0 and went to max if they're above max.
         //This is interesting behavior though.
-        if (nextX > (width - (4 * radius))) {
-            nextX = width - (4 * radius);
-        } else if (nextX < 0) {
-            nextX = (4 * radius);
+        if (nextX > (width - (2 * radius))) {
+            nextX = width - (2 * radius);
+        } else if (nextX < radius) {
+            nextX = (2 * radius);
         }
-        if (nextY > (height - (4 * radius))) {
-            nextY = height - (4 * radius);
-        } else if (nextY < 0) {
-            nextY = (4 * radius);
+        if (nextY > (height - (2 * radius))) {
+            nextY = height - (2 * radius);
+        } else if (nextY < radius) {
+            nextY = (2 * radius);
         }
     }
     if (didWiggle == false) {
@@ -287,6 +270,20 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     }
 }
 
+function generateNodes(alphabet, numOfNodes) {
+    let nodeList = []
+    if (numOfNodes > alphabet.length) {
+        console.log("num requested too high, just doing max.")
+        numOfNodes = alphabet.length;
+    }
+    let returnObj = {}
+    for (let index = 0; index < numOfNodes; index++) {
+        const element = alphabet[index];
+        nodeList.push(element)
+        returnObj[element] = [generateNum(width - radius) + radius, generateNum(height - radius) + radius]
+    }
+    return [returnObj, nodeList];
+}
 
 function stopInterval() {
     const acceptableError = 50
@@ -320,6 +317,7 @@ function stopInterval() {
     console.log(alsoGood)
     console.log(good)
 }
+
 
 function renderNodesAndConnections(context, nodes, nodeList, connections) {
     //set up text render

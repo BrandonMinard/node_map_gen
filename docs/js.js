@@ -2,7 +2,7 @@
 //Constants.
 //runs it 1000 times, for 200 steps.
 //Tells you various metrics about how long it took to become stable.
-const devMode = 1;
+const devMode = 0;
 
 const fullAlpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
@@ -98,7 +98,6 @@ const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - point
 
 
 
-let [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
 
 const connections = [
     ["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"], ["h", "i"], ["i", "j"], ["j", "k"], ["a", "k"],
@@ -117,9 +116,12 @@ let interval;
 //Nodes that have connections that intersect many other connections get a magnitude boost in their movement.
 //Nodes that jiggle in a small area get rocketed to 0,0, or some random coord.
 //wrap around? Roflmao. This one was a 5-10% reduction
+let nodeList;
+let nodes;
+function startRegularly() {
 
-if (devMode == 0) {
-    //Have to render once first to get it started elegantly.
+    [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
+    didWiggle = false;
     renderNodesAndConnections(context, nodes, nodeList, connections)
     //skip every 10 render steps.
     interval = setInterval(doTick, 1, context, nodeList, nodes, connections);
@@ -136,7 +138,18 @@ if (devMode == 0) {
         }
         renderNodesAndConnections(context, nodes, nodeList, connections)
     }
-} else {
+
+}
+
+async function startInDev() {
+    context.fillStyle = "black"
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
+    let didWiggle = false;
+    context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
+    context.font = '50px serif'
+    drawLetter(context, 300, 300, "Please wait")
+    await new Promise(r => setTimeout(r, 100));
     // find how bad stable v unstable is.
     let stable = 0;
     let itersNeeded = []
@@ -152,18 +165,32 @@ if (devMode == 0) {
             }
         }
     }
+
+    context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
+    context.font = '40px serif'
     //statistical stuff
     //only runs once, so let is fine here.
     let max = Math.max(...itersNeeded);
     let min = Math.min(...itersNeeded);
     let median = itersNeeded.sort((a, b) => a - b)[Math.floor(stable / 2)]
     let avgIters = itersNeeded.reduce(reducer) / stable
+    let minString = "min: " + min
+    let medianString = "median: " + median
+    let maxString = "max: " + max
+    let avgString = "avgIters: " + Math.round(avgIters)
+    let stableString = "stable: " + stable + " / 1000"
     console.log("min: ", min)
     console.log("median: ", median)
     console.log("max: ", max)
     console.log("avg: ", avgIters)
     console.log("stable: ", stable)
+    drawLetter(context, 300, 340, minString)
+    drawLetter(context, 300, 380, medianString)
+    drawLetter(context, 300, 420, maxString)
+    drawLetter(context, 300, 460, avgString)
+    drawLetter(context, 300, 500, stableString)
 }
+
 
 //The main functions that moves nodes around
 //Move connected nodes if they're too far away or too close together.

@@ -184,6 +184,7 @@ async function startInDev() {
     console.log("max: ", max)
     console.log("avg: ", avgIters)
     console.log("stable: ", stable)
+    drawLetter(context, 300, 300, "iterLimit: 500")
     drawLetter(context, 300, 340, minString)
     drawLetter(context, 300, 380, medianString)
     drawLetter(context, 300, 420, maxString)

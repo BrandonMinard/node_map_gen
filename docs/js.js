@@ -18,6 +18,14 @@ htmlCanvas.height = height;
 //radius determines the circles drawn, and the ndoe exclusion around them.
 //The exclusion circle is 3*radius
 const radius = 35
+//amount of nodes to generate
+const numToGen = 11
+
+//the "wiggle" factor.
+//I manually tuned this wiggle factor for radius 35, target 300, acceptableerror 50.
+//I need to look into how it's related to those constants.
+//For now, 22 is about as close to the magic number as I can get.
+const wiggle = 22
 
 //acceptable distance between connections
 const targetDistance = 300
@@ -28,7 +36,8 @@ const acceptableError = 50
 const exclusion = radius * 4;
 //and the acceptable error
 const exclusionError = 40;
-const numToGen = 11
+
+
 
 //OPTIMIZED METHODS FOR V8
 
@@ -199,7 +208,7 @@ async function startInDev() {
 function moveNodes(nodes, connections) {
     //Acceptable error should grow over time so that we always get something eventually.
     let didWiggle = false;
-    let a, b, c;
+    let a, b;
     let changeArr;
     connections.forEach(connection => {
         //iterate through connections forward and backwards in less code.
@@ -269,9 +278,11 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         //This may need to be changed?
         //I think direction works for all cases.
         direction = distance > (targetDistance + acceptableError);
-        //moves it by the sqrt of the distance + rand num between -25 and 25 for the sake of randomness.
+        //moves it by the sqrt of the distance + rand num between -20 and 20 for the sake of randomness.
+        //The randomness alone increases success over 500 iterations by 200%
         //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(60) - 30
+        //I somehow stumbled into a fairly good method. ???
+        magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(wiggle * 2) - wiggle
         // generateNum(Math.floor(Math.sqrt(distance))) - Math.floor(Math.sqrt(distance)) / 2;
         needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
         radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);

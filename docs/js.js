@@ -2,7 +2,7 @@
 //Constants.
 //runs it 1000 times, for 200 steps.
 //Tells you various metrics about how long it took to become stable.
-const devMode = 0;
+const devMode = 1;
 
 const fullAlpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
@@ -109,6 +109,15 @@ const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
 let didWiggle;
 let interval;
+
+
+//Brain storm for untangling
+//expand/collapse
+//identify problem child and flip it about a connected node
+//Nodes that have connections that intersect many other connections get a magnitude boost in their movement.
+//Nodes that jiggle in a small area get rocketed to 0,0, or some random coord.
+//wrap around? Roflmao. This one was a 5-10% reduction
+
 if (devMode == 0) {
     //Have to render once first to get it started elegantly.
     renderNodesAndConnections(context, nodes, nodeList, connections)
@@ -192,10 +201,7 @@ function moveNodes(nodes, connections) {
                 nodes[a] = [changeArr[0], changeArr[1]]
             }
 
-            //swap a and b using a third value, c.
-            c = a;
-            a = b;
-            b = c;
+            [a, b] = [b, a]
         }
     });
     return didWiggle
@@ -244,10 +250,8 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         radianPointA = correctRadians(radianPointA, direction, needCorrectionA);
         nextX = nodes[nodeA][0] + radianPointA[0]
         nextY = nodes[nodeA][1] + radianPointA[1]
-        //There was a bug here, and it seemed to help?
-        //And x or y that went beyond their bounds went to 0 instead.
-        //I changed it so that went to 0 if they're below 0 and went to max if they're above max.
-        //This is interesting behavior though.
+
+        //Wrapping does not help, tried it.
         if (nextX > (width - radius)) {
             nextX = width - radius;
         } else if (nextX < radius) {
@@ -277,7 +281,7 @@ function generateNodes(alphabet, numOfNodes) {
     for (let index = 0; index < numOfNodes; index++) {
         const element = alphabet[index];
         nodeList.push(element)
-        returnObj[element] = [generateNum(width - radius) + radius, generateNum(height - radius) + radius]
+        returnObj[element] = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
     }
     return [returnObj, nodeList];
 }
@@ -311,8 +315,9 @@ function stopInterval() {
         }
     });
 
-    console.log(alsoGood)
+
     console.log(good)
+    console.log(alsoGood)
 }
 
 

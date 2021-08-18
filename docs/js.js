@@ -42,6 +42,28 @@ const iterLimit = 500;
 const totalRuns = 1000;
 
 
+//Wait but we want to find the ones that move often, but don't move much.
+//not those that don't move at all.
+//Could look at total distance moved by it over so many iters, and then check it's distance from where it was.
+//If those aren't good, we do something?
+
+//So, distance moved over x turns, and then how far it's moved over those turns.
+//But like, what should the requisite value be.
+
+//how many iterations we keep memory of, and check against.
+//Long as they've moved somewhat, we don't force them out.
+const problemChildFreqCheck = 10;
+//The distance the problem child has to move for it not to be forced out??
+const problemChildAreaCheck = 35;
+
+//have to put a bunch of stuff in here. A fixed length array would be nice.
+//hmmm, feels like there should be a better solution.
+//Like a single integer, but no need full memory, I think.
+//Can have a running count so I don't have to sum arrays constantly.
+let movementMemory = {}
+
+//motion vectors...? That's a good learning experience.
+
 
 //OPTIMIZED METHODS FOR V8
 
@@ -104,14 +126,12 @@ const findPointFromRadians = (angle, r) => [Math.cos(angle) * r, Math.sin(angle)
 //points 1 and 2 are arrays of 2 elements.
 const findDistance = (points1, points2) => Math.sqrt(Math.pow(points2[0] - points1[0], 2) + Math.pow(points2[1] - points1[1], 2))
 
+
+const reducer = (accumulator, currentValue) => accumulator + currentValue;
 //---------------------
 //ACTUAL CODE START
 
 
-const reducer = (accumulator, currentValue) => accumulator + currentValue;
-
-let didWiggle;
-let interval;
 
 
 //Brain storm for untangling
@@ -120,19 +140,22 @@ let interval;
 //Nodes that have connections that intersect many other connections get a magnitude boost in their movement.
 //Nodes that jiggle in a small area get rocketed to 0,0, or some random coord.
 //wrap around? Roflmao. This one was a 5-10% reduction
+//change the angle nodes move randomly. This has some potential, I believe.
+
+let didWiggle;
+let interval;
 let nodeList;
 let nodes;
 function startRegularly() {
-
     [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
     didWiggle = false;
     renderNodesAndConnections(context, nodes, nodeList, connections)
     //skip every 10 render steps.
     interval = setInterval(doTick, 1, context, nodeList, nodes, connections);
     function doTick(context, nodeList, nodes, connections) {
-
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
         //can make it faster with this, really cuts down on jitteriness.
+        //Is a TODO for the future.
         // for (let index = 0; index < 5; index++) {
         //     
         // }
@@ -142,11 +165,9 @@ function startRegularly() {
         }
         renderNodesAndConnections(context, nodes, nodeList, connections)
     }
-
 }
 
 async function startInDev() {
-
     context.fillStyle = "black"
     context.textAlign = 'center';
     context.textBaseline = "middle";
@@ -164,7 +185,6 @@ async function startInDev() {
         for (let index = 0; index < iterLimit; index++) {
             didWiggle = moveNodes(nodes, connections)
             if (!didWiggle) {
-
                 stable += 1
                 itersNeeded.push(index)
                 break
@@ -180,79 +200,55 @@ async function startInDev() {
     let min = Math.min(...itersNeeded);
     let median = itersNeeded.sort((a, b) => a - b)[Math.floor(stable / 2)]
     let avgIters = itersNeeded.reduce(reducer) / stable
-    let minString = "min: " + min
-    let medianString = "median: " + median
-    let maxString = "max: " + max
-    let avgString = "avgIters: " + Math.round(avgIters)
-    let stableString = "stable: " + stable + " / " + totalRuns
-    console.log("min: ", min)
-    console.log("median: ", median)
-    console.log("max: ", max)
-    console.log("avg: ", avgIters)
-    console.log("stable: ", stable)
     drawLetter(context, 300, 300, "iterLimit: " + iterLimit)
-    drawLetter(context, 300, 340, minString)
-    drawLetter(context, 300, 380, medianString)
-    drawLetter(context, 300, 420, maxString)
-    drawLetter(context, 300, 460, avgString)
-    drawLetter(context, 300, 500, stableString)
+    drawLetter(context, 300, 340, "min: " + min)
+    drawLetter(context, 300, 380, "median: " + median)
+    drawLetter(context, 300, 420, "max: " + max)
+    drawLetter(context, 300, 460, "avgIters: " + Math.round(avgIters))
+    drawLetter(context, 300, 500, "stable: " + stable + " / " + totalRuns)
 }
-
 
 //The main functions that moves nodes around
 //Move connected nodes if they're too far away or too close together.
 //Move nodes away from each other if they're too close together.
 function moveNodes(nodes, connections) {
-    //Acceptable error should grow over time so that we always get something eventually.
     let didWiggle = false;
     let a, b;
     let changeArr;
     connections.forEach(connection => {
+        [a, b] = [connection[0], connection[1]]
         //iterate through connections forward and backwards in less code.
-        a = connection[0]
-        b = connection[1]
         for (let index = 0; index < 2; index++) {
             //Check that nodes[a] is not too close to any other node that is not itself.
             nodeList.forEach(nodeB => {
                 if (nodeB != a) {
                     changeArr = moveNodeBasedOnDistanceToAnother(a, nodeB, exclusion, exclusionError, 1)
-                    if (!didWiggle) {
-                        didWiggle = changeArr[2]
-                    }
-                    if (changeArr[2]) {
-                        nodes[a] = [changeArr[0], changeArr[1]]
-                    }
+                    //Change did wiggle to true if it wiggled and it's not already false.
+                    if (!didWiggle) { didWiggle = changeArr[2] }
+                    //Use whether it moved in changeArr[2] (a bool), and move it.
+                    //Else nothing.
+                    if (changeArr[2]) { nodes[a] = [changeArr[0], changeArr[1]] }
                 }
             });
 
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
-            //The fix, which should've been obvious.
-            if (!didWiggle) {
-                didWiggle = changeArr[2]
-            }
-            //these are for different purposes.
-            if (changeArr[2]) {
-                nodes[a] = [changeArr[0], changeArr[1]]
-            }
-
+            if (!didWiggle) { didWiggle = changeArr[2] }
+            if (changeArr[2]) { nodes[a] = [changeArr[0], changeArr[1]] }
             [a, b] = [b, a]
         }
     });
     return didWiggle
 }
 
-//Move nodes based on the comparison argument.
-//this handles moving nodes always away from each other
-//Always to close from each other
-//Or within an acceptable bound between those.
-//This function needs to be significantly optimized.
+//returns new coords, and whether it should change as a flat array.
+//newX, newY, moved
 function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptableError, comparison) {
     let nextX;
     let nextY;
     let magnitude;
-    let radianPointA;
+    let radianPoint;
     let direction;
-    let needCorrectionA;
+    let needCorrection;
     let didWiggle = false
     let distance = findDistance(nodes[nodeA], nodes[nodeB]);
     //comp var is the result of whatever the comparison stuff below outputs.
@@ -260,6 +256,7 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     //This if should become a variable that's used depending on a comparison variable.
     //Either towards, away, or both.
     //Represented by 0, 1, and 2.
+    //This should probably not be string compare since it runs very, very, very often.
     if (comparison == 0) {
         //should move towards
         compVar = distance > targetDistance + acceptableError
@@ -272,20 +269,17 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     }
     if (compVar) {
         didWiggle = true;
-        //This may need to be changed?
-        //I think direction works for all cases.
+        //towards or away.
         direction = distance > (targetDistance + acceptableError);
-        //moves it by the sqrt of the distance + rand num between -20 and 20 for the sake of randomness.
+        //moves it by the sqrt of the distance + rand num between -wiggle and +wiggle
         //The randomness alone increases success over 500 iterations by 200%
-        //This is the main tuning, how much it wiggles is integral to how quick it finds stability.
-        //I somehow stumbled into a fairly good method. ???
         magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(wiggle * 2) - wiggle
         // generateNum(Math.floor(Math.sqrt(distance))) - Math.floor(Math.sqrt(distance)) / 2;
-        needCorrectionA = nodes[nodeA][0] >= nodes[nodeB][0];
-        radianPointA = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
-        radianPointA = correctRadians(radianPointA, direction, needCorrectionA);
-        nextX = nodes[nodeA][0] + radianPointA[0]
-        nextY = nodes[nodeA][1] + radianPointA[1]
+        needCorrection = nodes[nodeA][0] >= nodes[nodeB][0];
+        radianPoint = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
+        radianPoint = correctRadians(radianPoint, direction, needCorrection);
+        nextX = nodes[nodeA][0] + radianPoint[0]
+        nextY = nodes[nodeA][1] + radianPoint[1]
 
         //Wrapping does not help, tried it.
         if (nextX > (width - radius)) {

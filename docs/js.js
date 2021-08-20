@@ -1,4 +1,5 @@
 
+//TODO modify foreach loops into for loops with a static comparison.
 //Constants.
 const fullAlpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
@@ -55,14 +56,6 @@ const totalRuns = 1000;
 const problemChildFreqCheck = 10;
 //The distance the problem child has to move for it not to be forced out??
 const problemChildAreaCheck = 35;
-
-//have to put a bunch of stuff in here. A fixed length array would be nice.
-//hmmm, feels like there should be a better solution.
-//Like a single integer, but no need full memory, I think.
-//Can have a running count so I don't have to sum arrays constantly.
-let movementMemory = {}
-
-//motion vectors...? That's a good learning experience.
 
 
 //OPTIMIZED METHODS FOR V8
@@ -227,13 +220,13 @@ function moveNodes(nodes, connections) {
                     if (!didWiggle) { didWiggle = changeArr[2] }
                     //Use whether it moved in changeArr[2] (a bool), and move it.
                     //Else nothing.
-                    if (changeArr[2]) { nodes[a] = [changeArr[0], changeArr[1]] }
+                    if (changeArr[2]) { nodes[a]["position"] = [changeArr[0], changeArr[1]] }
                 }
             });
 
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
             if (!didWiggle) { didWiggle = changeArr[2] }
-            if (changeArr[2]) { nodes[a] = [changeArr[0], changeArr[1]] }
+            if (changeArr[2]) { nodes[a]["position"] = [changeArr[0], changeArr[1]] }
             [a, b] = [b, a]
         }
     });
@@ -250,7 +243,10 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     let direction;
     let needCorrection;
     let didWiggle = false
-    let distance = findDistance(nodes[nodeA], nodes[nodeB]);
+    let nodeAPosition = nodes[nodeA]["position"]
+    let nodeBPosition = nodes[nodeB]["position"]
+    let distance = findDistance(nodeAPosition, nodeBPosition);
+
     //comp var is the result of whatever the comparison stuff below outputs.
     let compVar;
     //This if should become a variable that's used depending on a comparison variable.
@@ -275,11 +271,11 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         //The randomness alone increases success over 500 iterations by 200%
         magnitude = ((Math.floor(Math.sqrt(distance)))) + generateNum(wiggle * 2) - wiggle
         // generateNum(Math.floor(Math.sqrt(distance))) - Math.floor(Math.sqrt(distance)) / 2;
-        needCorrection = nodes[nodeA][0] >= nodes[nodeB][0];
-        radianPoint = findPointFromRadians(findRadiansBetweenNodes(nodes[nodeA], nodes[nodeB]), magnitude);
+        needCorrection = nodeAPosition[0] >= nodeBPosition[0];
+        radianPoint = findPointFromRadians(findRadiansBetweenNodes(nodeAPosition, nodeBPosition), magnitude);
         radianPoint = correctRadians(radianPoint, direction, needCorrection);
-        nextX = nodes[nodeA][0] + radianPoint[0]
-        nextY = nodes[nodeA][1] + radianPoint[1]
+        nextX = nodeAPosition[0] + radianPoint[0]
+        nextY = nodeAPosition[1] + radianPoint[1]
 
         //Wrapping does not help, tried it.
         if (nextX > (width - radius)) {
@@ -301,6 +297,9 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     }
 }
 
+//Need to change this significantly.
+//Needs to be an object that contains many objects.
+//node has position, distance memory, and position memory.
 function generateNodes(alphabet, numOfNodes) {
     let nodeList = []
     if (numOfNodes > alphabet.length) {
@@ -311,7 +310,11 @@ function generateNodes(alphabet, numOfNodes) {
     for (let index = 0; index < numOfNodes; index++) {
         const element = alphabet[index];
         nodeList.push(element)
-        returnObj[element] = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
+        returnObj[element] = {
+            "position": [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius],
+            "positionMem": [],
+            "distMem": []
+        }
     }
     return [returnObj, nodeList];
 }
@@ -321,14 +324,15 @@ function stopInterval() {
     //check boundaries at the end.
     let good = true
     nodeList.forEach(node => {
-        if (nodes[node][0] > (width - radius)) {
+        let nodePosition = nodes[node]["position"]
+        if (nodePosition[0] > (width - radius)) {
             good = false
-        } else if (nodes[node][0] < radius) {
+        } else if (nodePosition[0] < radius) {
             good = false
         }
-        if (nodes[node][1] > (height - radius)) {
+        if (nodePosition[1] > (height - radius)) {
             good = false
-        } else if (nodes[node][1] < radius) {
+        } else if (nodePosition[1] < radius) {
             good = false
         }
 
@@ -337,7 +341,9 @@ function stopInterval() {
     let alsoGood = true;
     //check that all connections are within acceptable bounds.
     connections.forEach(connection => {
-        distance = findDistance(nodes[connection[0]], nodes[connection[1]])
+        let nodePosition0 = nodes[connection[0]]["position"]
+        let nodePosition1 = nodes[connection[1]]["position"]
+        distance = findDistance(nodePosition0, nodePosition1)
         if (!(distance >= targetDistance - acceptableError && distance <= targetDistance + acceptableError)) {
             alsoGood = false
         }
@@ -358,17 +364,19 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     let node;
     //render all the connections, must do this first.
     connections.forEach(connection => {
+        let nodePosition0 = nodes[connection[0]]["position"]
+        let nodePosition1 = nodes[connection[1]]["position"]
         context.beginPath();
         //This looks bad, but it's fine, probably.
-        context.moveTo(nodes[connection[0]][0], nodes[connection[0]][1]);
-        context.lineTo(nodes[connection[1]][0], nodes[connection[1]][1]);
+        context.moveTo(nodePosition0[0], nodePosition0[1]);
+        context.lineTo(nodePosition1[0], nodePosition1[1]);
         context.closePath();
         context.stroke();
     });
     //then render all nodes and letters within
     nodeList.forEach(nodeLetter => {
         context.fillStyle = "white"
-        node = nodes[nodeLetter]
+        node = nodes[nodeLetter]["position"]
         drawCircle(context, node[0], node[1], radius)
         //swapping fillstyle so often seems not great.
         context.fillStyle = 'black'
@@ -377,10 +385,12 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
 
     //this isn't useful anymore.
     connections.forEach(connection => {
-        radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[0]], nodes[connection[1]]), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodes[connection[0]], nodes[connection[1]]], radians, 3.5)
-        radians = findPointFromRadians(findRadiansBetweenNodes(nodes[connection[1]], nodes[connection[0]]), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodes[connection[1]], nodes[connection[0]]], radians, 3.5)
+        let nodePosition0 = nodes[connection[0]]["position"]
+        let nodePosition1 = nodes[connection[1]]["position"]
+        radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition0, nodePosition1), radius)
+        drawCircleOnNodeRadiansRadius(context, [nodePosition0, nodePosition1], radians, 3.5)
+        radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition1, nodePosition0), radius)
+        drawCircleOnNodeRadiansRadius(context, [nodePosition1, nodePosition0], radians, 3.5)
     });
 }
 

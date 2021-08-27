@@ -229,8 +229,8 @@ function moveNodes(nodes, connections) {
                     //Use whether it moved in changeArr[2] (a bool), and move it.
                     //Else nothing.
                     if (changeArr[2]) {
-                        //REPLACE with object
-                        nodes[a]["position"] = [changeArr[0], changeArr[1]]
+                        //REPLACE with object DONE
+                        nodes[a].updatePosition([changeArr[0], changeArr[1]]);
                     }
                 }
             });
@@ -238,14 +238,14 @@ function moveNodes(nodes, connections) {
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
             if (!didWiggle) { didWiggle = changeArr[2] }
             if (changeArr[2]) {
-                //REPLACE with object
-                nodes[a]["position"] = [changeArr[0], changeArr[1]]
+                //REPLACE with object DONE
+                nodes[a].updatePosition([changeArr[0], changeArr[1]]);
                 //This really shouldn't be here, oh god.
                 //Classifying nodes seems like a better idea every moment...
                 //Or modulize it?
                 //Should just push/unshift.
-                nodes[a]["positionMem"].push([changeArr[0], changeArr[1]])
-                nodes[a].shift()
+                // nodes[a]["positionMem"].push([changeArr[0], changeArr[1]])
+                // nodes[a].shift()
 
             }
 
@@ -265,9 +265,9 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     let direction;
     let needCorrection;
     let didWiggle = false
-    //REPLACE with objects
-    let nodeAPosition = nodes[nodeA]["position"]
-    let nodeBPosition = nodes[nodeB]["position"]
+    //REPLACE with objects DONE
+    let nodeAPosition = nodes[nodeA].position
+    let nodeBPosition = nodes[nodeB].position
 
     let distance = findDistance(nodeAPosition, nodeBPosition);
 
@@ -333,6 +333,7 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
 function generateNodes(alphabet, numOfNodes) {
     let nodeList = []
     let firstGenPosition;
+    let newNode;
     if (numOfNodes > alphabet.length) {
         console.log("num requested too high, just doing max.")
         numOfNodes = alphabet.length;
@@ -342,17 +343,19 @@ function generateNodes(alphabet, numOfNodes) {
         const element = alphabet[index];
         nodeList.push(element)
         firstGenPosition = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
-        returnObj[element] = {
-            //REPLACE with object
-
-            "position": firstGenPosition,
-            //add 10 values to this at first, so we never have to use an if when updating this.
-            "positionMem": [0, 0, 0, 0, 0, 0, 0, 0, 0, firstGenPosition],
-            //add 9 values, since we're looking at differences between each set of nodes.
-            //Then check the sum?
-            //should the sum be an int that also changes with the array?
-            "distMem": [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        }
+        // newNode = new NodeClass(element, firstGenPosition)
+        returnObj[element] = new NodeClass(element, firstGenPosition)
+        // {
+        //REPLACE with object DONE
+        // newNode
+        // "position": firstGenPosition,
+        // //add 10 values to this at first, so we never have to use an if when updating this.
+        // "positionMem": [0, 0, 0, 0, 0, 0, 0, 0, 0, firstGenPosition],
+        // //add 9 values, since we're looking at differences between each set of nodes.
+        // //Then check the sum?
+        // //should the sum be an int that also changes with the array?
+        // "distMem": [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        // }
     }
     return [returnObj, nodeList];
 }
@@ -367,8 +370,8 @@ function stopInterval() {
     //check boundaries at the end.
     let good = true
     nodeList.forEach(node => {
-        //REPLACE with object
-        let nodePosition = nodes[node]["position"]
+        //REPLACE with object DONE
+        let nodePosition = nodes[node].position
         if (nodePosition[0] > (width - radius)) {
             good = false
         } else if (nodePosition[0] < radius) {
@@ -385,9 +388,9 @@ function stopInterval() {
     let alsoGood = true;
     //check that all connections are within acceptable bounds.
     connections.forEach(connection => {
-        //REPLACE with object
-        let nodePosition0 = nodes[connection[0]]["position"]
-        let nodePosition1 = nodes[connection[1]]["position"]
+        //REPLACE with object DONE
+        let nodePosition0 = nodes[connection[0]].position
+        let nodePosition1 = nodes[connection[1]].position
         distance = findDistance(nodePosition0, nodePosition1)
         if (!(distance >= targetDistance - acceptableError && distance <= targetDistance + acceptableError)) {
             alsoGood = false
@@ -409,9 +412,9 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     let node;
     //render all the connections, must do this first.
     connections.forEach(connection => {
-        //REPLACE with object
-        let nodePosition0 = nodes[connection[0]]["position"]
-        let nodePosition1 = nodes[connection[1]]["position"]
+        //REPLACE with object DONT
+        let nodePosition0 = nodes[connection[0]].position
+        let nodePosition1 = nodes[connection[1]].position
 
         context.beginPath();
         //This looks bad, but it's fine, probably.
@@ -432,9 +435,9 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
 
     //this isn't useful anymore.
     connections.forEach(connection => {
-        //REPLACE with object
-        let nodePosition0 = nodes[connection[0]]["position"]
-        let nodePosition1 = nodes[connection[1]]["position"]
+        //REPLACE with object DONE
+        let nodePosition0 = nodes[connection[0]].position
+        let nodePosition1 = nodes[connection[1]].position
 
         radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition0, nodePosition1), radius)
         drawCircleOnNodeRadiansRadius(context, [nodePosition0, nodePosition1], radians, 3.5)

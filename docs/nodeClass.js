@@ -1,8 +1,8 @@
-class Node {
+class NodeClass {
     constructor(name, position) {
         this.x = position[0];
         this.y = position[1];
-        this.name = name;
+        this.eleName = name;
         this.positionMem = [0, 0, 0, 0, 0, 0, 0, 0, 0, position];
         //do I go high or low here?
         //High may be better because then we don't wait 10 iterations to actually look for problems.
@@ -10,13 +10,19 @@ class Node {
         this.distMem = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         this.distRunningTotal = 0;
     }
+
     get position() {
-        return [this.x, this.y];
+        return [this.x, this.y]
     }
 
-    get name() {
-        return this.name;
+    // getPosition() {
+    //     return ;
+    // }
+
+    getName() {
+        return this.eleName;
     }
+
 
     updatePosition(newPosition) {
         this.x = newPosition[0];

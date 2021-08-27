@@ -15,11 +15,8 @@ class NodeClass {
         return [this.x, this.y]
     }
 
-    // getPosition() {
-    //     return ;
-    // }
 
-    getName() {
+    get name() {
         return this.eleName;
     }
 

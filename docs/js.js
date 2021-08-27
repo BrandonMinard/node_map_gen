@@ -229,7 +229,6 @@ function moveNodes(nodes, connections) {
                     //Use whether it moved in changeArr[2] (a bool), and move it.
                     //Else nothing.
                     if (changeArr[2]) {
-                        //REPLACE with object DONE
                         nodes[a].updatePosition([changeArr[0], changeArr[1]]);
                     }
                 }
@@ -238,14 +237,7 @@ function moveNodes(nodes, connections) {
             changeArr = moveNodeBasedOnDistanceToAnother(a, b, targetDistance, acceptableError, 2)
             if (!didWiggle) { didWiggle = changeArr[2] }
             if (changeArr[2]) {
-                //REPLACE with object DONE
                 nodes[a].updatePosition([changeArr[0], changeArr[1]]);
-                //This really shouldn't be here, oh god.
-                //Classifying nodes seems like a better idea every moment...
-                //Or modulize it?
-                //Should just push/unshift.
-                // nodes[a]["positionMem"].push([changeArr[0], changeArr[1]])
-                // nodes[a].shift()
 
             }
 
@@ -265,12 +257,9 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
     let direction;
     let needCorrection;
     let didWiggle = false
-    //REPLACE with objects DONE
     let nodeAPosition = nodes[nodeA].position
     let nodeBPosition = nodes[nodeB].position
-
     let distance = findDistance(nodeAPosition, nodeBPosition);
-
     let compVar;
     //comp var is the result of whatever the comparison stuff below outputs.
     //Either towards, away, or both.
@@ -286,14 +275,6 @@ function moveNodeBasedOnDistanceToAnother(nodeA, nodeB, targetDistance, acceptab
         compVar = distance < (targetDistance - acceptableError) || distance > (targetDistance + acceptableError)
     }
     if (compVar) {
-        //Somewhere within this, we add to the memories.
-        //And we check it.
-        //Should be a function.
-        //Add to memory here, check further up?
-        //Should memory only be added to when it's moving towards or away? or always?
-        //Seems like always will give me more false positives.
-        //Adding to all is significantly easier, so jsut do that now, add coarseness later.
-
         didWiggle = true;
         //towards or away.
         direction = distance > (targetDistance + acceptableError);
@@ -343,19 +324,7 @@ function generateNodes(alphabet, numOfNodes) {
         const element = alphabet[index];
         nodeList.push(element)
         firstGenPosition = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
-        // newNode = new NodeClass(element, firstGenPosition)
         returnObj[element] = new NodeClass(element, firstGenPosition)
-        // {
-        //REPLACE with object DONE
-        // newNode
-        // "position": firstGenPosition,
-        // //add 10 values to this at first, so we never have to use an if when updating this.
-        // "positionMem": [0, 0, 0, 0, 0, 0, 0, 0, 0, firstGenPosition],
-        // //add 9 values, since we're looking at differences between each set of nodes.
-        // //Then check the sum?
-        // //should the sum be an int that also changes with the array?
-        // "distMem": [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        // }
     }
     return [returnObj, nodeList];
 }
@@ -370,7 +339,6 @@ function stopInterval() {
     //check boundaries at the end.
     let good = true
     nodeList.forEach(node => {
-        //REPLACE with object DONE
         let nodePosition = nodes[node].position
         if (nodePosition[0] > (width - radius)) {
             good = false
@@ -388,7 +356,6 @@ function stopInterval() {
     let alsoGood = true;
     //check that all connections are within acceptable bounds.
     connections.forEach(connection => {
-        //REPLACE with object DONE
         let nodePosition0 = nodes[connection[0]].position
         let nodePosition1 = nodes[connection[1]].position
         distance = findDistance(nodePosition0, nodePosition1)
@@ -412,10 +379,8 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     let node;
     //render all the connections, must do this first.
     connections.forEach(connection => {
-        //REPLACE with object DONT
         let nodePosition0 = nodes[connection[0]].position
         let nodePosition1 = nodes[connection[1]].position
-
         context.beginPath();
         //This looks bad, but it's fine, probably.
         context.moveTo(nodePosition0[0], nodePosition0[1]);
@@ -435,10 +400,8 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
 
     //this isn't useful anymore.
     connections.forEach(connection => {
-        //REPLACE with object DONE
         let nodePosition0 = nodes[connection[0]].position
         let nodePosition1 = nodes[connection[1]].position
-
         radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition0, nodePosition1), radius)
         drawCircleOnNodeRadiansRadius(context, [nodePosition0, nodePosition1], radians, 3.5)
         radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition1, nodePosition0), radius)

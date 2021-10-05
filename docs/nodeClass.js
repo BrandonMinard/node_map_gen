@@ -20,6 +20,14 @@ class NodeClass {
         return this.eleName;
     }
 
+    get drt() {
+        return this.distRunningTotal;
+    }
+
+    get dmem() {
+        return this.distMem;
+    }
+
 
     updatePosition(newPosition) {
         this.x = newPosition[0];

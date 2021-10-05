@@ -42,7 +42,7 @@ const exclusion = radius * 4;
 const exclusionError = 40;
 
 //for dev
-const iterLimit = 500;
+const iterLimit = 5000;
 const totalRuns = 1000;
 
 
@@ -143,10 +143,14 @@ let nodes;
 function startRegularly() {
     [nodes, nodeList] = generateNodes(fullAlpha, numToGen)
     didWiggle = false;
+    // console.log(nodes[0].distRunningTotal)
+    let maxConnections = 0
+    generateConnections(nodeList, maxConnections)
     renderNodesAndConnections(context, nodes, nodeList, connections)
     //skip every 10 render steps.
     interval = setInterval(doTick, 1, context, nodeList, nodes, connections);
     function doTick(context, nodeList, nodes, connections) {
+        // console.log(nodes["a"].drt / 9)
         context.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height)
         //can make it faster with this, really cuts down on jitteriness.
         //Is a TODO for the future.
@@ -326,11 +330,50 @@ function generateNodes(alphabet, numOfNodes) {
         firstGenPosition = [generateNum(width - (2 * radius)) + radius, generateNum(height - (2 * radius)) + radius]
         returnObj[element] = new NodeClass(element, firstGenPosition)
     }
+    if (!connections) {
+        generateConnections(nodeList, maxConnections)
+    }
+
     return [returnObj, nodeList];
 }
 
 //TODO once we figure out problem children
+//Well problem children I've sorta given up on, so here we go with this.
 function generateConnections(nodeList, maxConnections) {
+    let connectionsOb = {}
+    for (let index = 0; index < nodeList.length; index++) {
+        connectionsOb[nodeList[index]] = 0;
+    }
+    let permutations = []
+    for (let index = 0; index < nodeList.length; index++) {
+        const element = nodeList[index];
+        for (let index2 = index + 1; index2 < nodeList.length; index2++) {
+            const element2 = nodeList[index2];
+            permutations.push([element, element2])
+        }
+
+    }
+    console.log(permutations)
+    //Uh, so now figure out which perms to use
+    //from 1 to 4 for each.
+    //So have to check each time.
+    const max = 4
+    let flag = false
+    for (let index = 0; index < Object.keys(connectionsOb).length; index++) {
+        const element = connectionsOb[Object.keys(connectionsOb)[index]];
+        //Check that no num is not within bounds.
+        if (!((element > 0) && (element < max + 1))) {
+            //if one is outside bounds set flag
+            flag = true
+        }
+        //if flag is not set, break.
+        //all params should be good.
+        if (flag == false) {
+            break
+        }
+        flag = false
+    }
+
 
 }
 
@@ -375,7 +418,7 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     context.font = '30px serif'
     context.textAlign = 'center';
     context.textBaseline = "middle";
-    let radians;
+    // let radians;
     let node;
     //render all the connections, must do this first.
     connections.forEach(connection => {
@@ -399,14 +442,14 @@ function renderNodesAndConnections(context, nodes, nodeList, connections) {
     });
 
     //this isn't useful anymore.
-    connections.forEach(connection => {
-        let nodePosition0 = nodes[connection[0]].position
-        let nodePosition1 = nodes[connection[1]].position
-        radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition0, nodePosition1), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodePosition0, nodePosition1], radians, 3.5)
-        radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition1, nodePosition0), radius)
-        drawCircleOnNodeRadiansRadius(context, [nodePosition1, nodePosition0], radians, 3.5)
-    });
+    // connections.forEach(connection => {
+    //     let nodePosition0 = nodes[connection[0]].position
+    //     let nodePosition1 = nodes[connection[1]].position
+    //     radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition0, nodePosition1), radius)
+    //     drawCircleOnNodeRadiansRadius(context, [nodePosition0, nodePosition1], radians, 3.5)
+    //     radians = findPointFromRadians(findRadiansBetweenNodes(nodePosition1, nodePosition0), radius)
+    //     drawCircleOnNodeRadiansRadius(context, [nodePosition1, nodePosition0], radians, 3.5)
+    // });
 }
 
 //Bad function, based on a bad idea.

@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 
+
 </head>
 
 <body>
@@ -16,13 +17,15 @@
 
     <div id="areasAndDiff"></div>
     <canvas id="drawField" width="100" height="300"></canvas>
-    <button id="stopInterval" type="button" onclick="stopInterval()">STOP INTERVAL</button>
-    <button id="notDevMode" type="button" onclick="startRegularly()">Gen without Dev Mode</button>
-    <button id="devMode" type="button" onclick="startInDev()">Gen with Dev Mode</button>
+    <div class="inputs" style="display: flex;">
+        <input type="number" min="1" max="50" id="nodeNum" name="nodeNum" value="16"><br><br>
+        <input type="number" min="1" max="4" id="conNum" name="conNum" value="4"><br><br>
+        <button id="stopInterval" type="button" onclick="stopInterval()">STOP INTERVAL</button>
+        <button id="notDevMode" type="button" onclick="startRegularly()">Gen without Dev Mode</button>
+        <button id="devMode" type="button" onclick="startInDev()">Gen with Dev Mode</button>
+    </div>
     <script src="js.js"></script>
     <script src="nodeClass.js"></script>
 </body>
-
-
 
 </html>
